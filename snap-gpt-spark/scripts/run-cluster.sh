@@ -1,0 +1,1 @@
+spark-submit --master yarn-cluster --executor-memory=24G --conf spark.shuffle.service.enabled=true --conf spark.dynamicAllocation.enabled=true --jars snap-gpt-spark-1.0-SNAPSHOT.jar,snap-all.jar --class be.vito.terrascope.snapgpt.ProcessFilesGPT

@@ -1,0 +1,66 @@
+<graph id="Graph">
+  <version>1.0</version>
+  <node id="Read">
+    <operator>Read</operator>
+    <sources/>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>/home/driesj/alldata/CGS_S2_FAPAR/2017/06/02/S2A_20170602T104212Z_31UFS_FAPAR_V100/S2A_20170602T104212Z_31UFS_FAPAR_10M_V100.tif</file>
+      <formatName>GeoTIFF</formatName>
+    </parameters>
+  </node>
+  <node id="Subset">
+    <operator>Subset</operator>
+    <sources>
+      <sourceProduct refid="Read"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <sourceBands>band_1</sourceBands>
+      <region>500,500,10980,10980</region>
+      <geoRegion/>
+      <subSamplingX>1</subSamplingX>
+      <subSamplingY>1</subSamplingY>
+      <fullSwath>false</fullSwath>
+      <tiePointGridNames/>
+      <copyMetadata>true</copyMetadata>
+    </parameters>
+  </node>
+
+  <node id="KMeansClusterAnalysis">
+    <operator>KMeansClusterAnalysis</operator>
+    <sources>
+      <sourceProduct refid="Subset"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <clusterCount>4</clusterCount>
+      <iterationCount>3</iterationCount>
+      <randomSeed>31415</randomSeed>
+      <sourceBandNames/>
+      <roiMaskName/>
+    </parameters>
+  </node>
+  <node id="Write">
+    <operator>Write</operator>
+    <sources>
+      <sourceProduct refid="KMeansClusterAnalysis"/>
+    </sources>
+    <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+      <file>/tmp/Subset_S2A_20170602T104212Z_31UFS_FAPAR_10M_V100_CLUSTERS.tif</file>
+      <formatName>GeoTIFF</formatName>
+    </parameters>
+  </node>
+  <applicationData id="Presentation">
+    <Description/>
+    <node id="Read">
+            <displayPosition x="37.0" y="134.0"/>
+    </node>
+    <node id="Subset">
+      <displayPosition x="163.0" y="139.0"/>
+    </node>
+    <node id="KMeansClusterAnalysis">
+      <displayPosition x="257.0" y="176.0"/>
+    </node>
+    <node id="Write">
+      <displayPosition x="445.0" y="159.0"/>
+    </node>
+  </applicationData>
+</graph>
