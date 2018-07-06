@@ -117,7 +117,7 @@ void build(tests = true){
         rtMaven.deployer.deployArtifacts = publishable_branches.contains(env.BRANCH_NAME)
         //use '--projects StatisticsMapReduce' in 'goals' to build specific module
         try {
-            buildInfo = rtMaven.run pom: 'pom.xml', goals: '-P !default,build clean install surefire:test@forked-jvm'
+            buildInfo = rtMaven.run pom: 'pom.xml', goals: '-P default clean install surefire:test@forked-jvm'
             try{
                 if(rtMaven.deployer.deployArtifacts )
                     server.publishBuildInfo buildInfo
