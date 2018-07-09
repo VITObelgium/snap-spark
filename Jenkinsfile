@@ -13,12 +13,8 @@ node ('jenkinsslave1.vgt.vito.be') {
         stage('Deploy to Dev') {
             //milestone ensures that previous builds that have reached this point are aborted
             milestone()
-            if("develop".equals(env.BRANCH_NAME)){
-
-            } else if ("master".equals(env.BRANCH_NAME)) {
-
-            }
-
+            sh "hdfs dfs -copyFromLocal -f snap-bundle/target/snap-bundle/snap-all-*.jar /workflows-dev/snap/"
+            sh "hdfs dfs -copyFromLocal -f snap-gpt-spark/target/snap-gpt-spark-${rel_version}.jar /workflows-dev/snap/"
         }
 
 
