@@ -13,8 +13,8 @@
         <module>snap-gpt-spark</module>
     </modules>
     <properties>
-        <s1tbx.version>7.0.0-SNAPSHOT</s1tbx.version>
-        <snap.version>7.0.0-SNAPSHOT</snap.version>
+        <s1tbx.version>6.0.2</s1tbx.version>
+        <snap.version>6.0.2</snap.version>
     </properties>
     <build>
         <pluginManagement>
