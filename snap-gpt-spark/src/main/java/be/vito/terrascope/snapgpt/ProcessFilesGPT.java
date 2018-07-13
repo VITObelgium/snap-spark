@@ -57,6 +57,7 @@ public class ProcessFilesGPT implements Serializable {
 
     private void run() {
         JavaSparkContext sparkContext = JavaSparkContext.fromSparkContext(SparkContext.getOrCreate());
+        sparkContext.setLogLevel("WARN");
 
         sparkContext.parallelize(files).foreach( file -> {
             ProcessTimeMonitor timeMonitor = new ProcessTimeMonitor();
@@ -64,6 +65,10 @@ public class ProcessFilesGPT implements Serializable {
             System.err.println("SNAP Application Data Dir: " +SystemUtils.getApplicationDataDir());
             System.err.println("SNAP Auxiliary Data Dir: " +SystemUtils.getAuxDataPath());
             System.err.println("SNAP Cache Dir: " +SystemUtils.getCacheDir());
+            TestUtils.log.info("SNAP Cache Dir: " +SystemUtils.getCacheDir());
+            System.err.println("Processing file: " + file);
+            System.err.println("Processing workflow: " + xml);
+            System.err.println("Output location: " + outputLocation);
 
             final GPFProcessor proc = new GPFProcessor(new File(xml));
             File inputFile = new File(file);
