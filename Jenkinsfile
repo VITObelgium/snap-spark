@@ -15,6 +15,10 @@ node ('jenkinsslave1.vgt.vito.be') {
             milestone()
             sh "hdfs dfs -copyFromLocal -f snap-bundle/target/snap-bundle/snap-all-*.jar /workflows-dev/snap/"
             sh "hdfs dfs -copyFromLocal -f snap-gpt-spark/target/snap-gpt-spark-${rel_version}.jar /workflows-dev/snap/"
+            dir("snap-gpt-spark") {
+                sh "zip etc.zip etc/*"
+                sh "hdfs dfs -copyFromLocal -f etc.zip /workflows-dev/snap/"
+            }
         }
 
 
