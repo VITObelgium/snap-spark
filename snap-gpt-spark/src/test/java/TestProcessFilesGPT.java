@@ -1,10 +1,13 @@
 import be.vito.terrascope.snapgpt.ProcessFilesGPT;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class TestProcessFilesGPT {
@@ -17,6 +20,30 @@ public class TestProcessFilesGPT {
         SparkContext.getOrCreate(new SparkConf(true).setAppName(TestProcessFilesGPT.class.getName()).setMaster("local[1]"));
         ProcessFilesGPT.main(new String[]{"-gpt", gptXML,"-output-dir","/tmp",testProduct});
     }
+
+    @Test
+    public void testSimpleGraphOtherOutputformat() throws URISyntaxException {
+        String gptXML = Paths.get(Thread.currentThread().getContextClassLoader().getResource("simple_test.xml").toURI()).toAbsolutePath().toString();
+        SparkContext.getOrCreate(new SparkConf(true).setAppName(TestProcessFilesGPT.class.getName()).setMaster("local[1]"));
+        ProcessFilesGPT.main(new String[]{"-gpt", gptXML,"-output-dir","/tmp","-format","BEAM-DIMAP",testProduct});
+    }
+
+    @Test
+    public void testErrorHandling() throws URISyntaxException, IOException {
+        String gptXML = Paths.get(Thread.currentThread().getContextClassLoader().getResource("simple_test.xml").toURI()).toAbsolutePath().toString();
+        SparkContext.getOrCreate(new SparkConf(true).setAppName(TestProcessFilesGPT.class.getName()).setMaster("local[1]"));
+        try {
+
+            ProcessFilesGPT.main(new String[]{"-gpt", gptXML, "-output-dir", "/tmp", "-format", "BEAM-DIMAP", "doesntExist.tif"});
+            Assert.fail();
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            Path path = Paths.get("/tmp/doesntExist.tif.FAILED");
+            Assert.assertTrue(Files.exists(path));
+            Files.delete(path);
+        }
+    }
+
 
     @Test
     public void testSimpleGraphNoTempFile() throws URISyntaxException {

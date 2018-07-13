@@ -11,6 +11,8 @@ import org.esa.snap.engine_utilities.util.TestUtils;
 import org.esa.snap.graphbuilder.rcp.dialogs.support.GPFProcessor;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +20,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.*;
 
 
 /**
@@ -60,36 +63,90 @@ public class ProcessFilesGPT implements Serializable {
         sparkContext.setLogLevel("WARN");
 
         sparkContext.parallelize(files).foreach( file -> {
-            ProcessTimeMonitor timeMonitor = new ProcessTimeMonitor();
-            timeMonitor.start();
-            System.err.println("SNAP Application Data Dir: " +SystemUtils.getApplicationDataDir());
-            System.err.println("SNAP Auxiliary Data Dir: " +SystemUtils.getAuxDataPath());
-            System.err.println("SNAP Cache Dir: " +SystemUtils.getCacheDir());
-            TestUtils.log.info("SNAP Cache Dir: " +SystemUtils.getCacheDir());
-            System.err.println("Processing file: " + file);
-            System.err.println("Processing workflow: " + xml);
-            System.err.println("Output location: " + outputLocation);
 
-            final GPFProcessor proc = new GPFProcessor(new File(xml));
             File inputFile = new File(file);
-            File outputFile = new File(outputLocation, inputFile.toPath().getFileName().toString());
-            File finalOutput = outputFile;
-            if (useStagingDirectory) {
-                Path tempDir = Paths.get("GPT_TEMPORARY_OUTPUT");
-                if (!tempDir.toFile().exists()) {
-                    Files.createDirectory(tempDir);
+
+            Handler fh = new FileHandler(Paths.get(outputLocation,inputFile.getName()+ ".log").toFile().getAbsolutePath());
+            fh.setLevel (Level.FINE);
+            fh.setFormatter(new SimpleFormatter());
+
+            Logger logger = Logger.getLogger("org.esa");
+            logger.setUseParentHandlers(true);
+            logger.addHandler (fh);
+
+            logger.setLevel (Level.ALL);
+
+            try {
+
+                ProcessTimeMonitor timeMonitor = new ProcessTimeMonitor();
+                timeMonitor.start();
+                System.err.println("SNAP Application Data Dir: " + SystemUtils.getApplicationDataDir());
+                System.err.println("SNAP Auxiliary Data Dir: " + SystemUtils.getAuxDataPath());
+                System.err.println("SNAP Cache Dir: " + SystemUtils.getCacheDir());
+                SystemUtils.LOG.info("SNAP Cache Dir: " + SystemUtils.getCacheDir());
+                System.err.println("Processing file: " + file);
+                System.err.println("Processing workflow: " + xml);
+                System.err.println("Output location: " + outputLocation);
+
+                final GPFProcessor proc = new GPFProcessor(new File(xml));
+
+                File outputFile = new File(outputLocation, inputFile.toPath().getFileName().toString());
+                File finalOutput = outputFile;
+                if (useStagingDirectory) {
+                    Path tempDir = Paths.get("GPT_TEMPORARY_OUTPUT");
+                    if (!tempDir.toFile().exists()) {
+                        Files.createDirectory(tempDir);
+                    }
+                    outputFile = tempDir.resolve(inputFile.toPath().getFileName().toString()).toFile();
                 }
-                outputFile = tempDir.resolve(inputFile.toPath().getFileName().toString()).toFile();
-            }
-            proc.setIO(inputFile, outputFile, formatName);
-            proc.executeGraph(new PrintWriterProgressMonitor(System.out));
+                proc.setIO(inputFile, outputFile, formatName);
+                proc.executeGraph(new PrintWriterProgressMonitor(System.out){
+                    @Override
+                    protected void printStartMessage(PrintWriter pw) {
+                        super.printStartMessage(pw);
+                        SystemUtils.LOG.info("Started " + this.getMessage());
+                    }
 
-            final long duration = timeMonitor.stop();
+                    @Override
+                    protected void printWorkedMessage(PrintWriter pw) {
+                        super.printWorkedMessage(pw);
+                    }
 
-            TestUtils.log.info(" time: " + ProcessTimeMonitor.formatDuration(duration) + " (" + duration + " s)");
-            if (useStagingDirectory) {
-                TestUtils.log.info("Copying file to final destination: " + finalOutput.toString());
-                Files.copy(outputFile.toPath(), finalOutput.toPath(),StandardCopyOption.REPLACE_EXISTING);
+                    @Override
+                    protected void printMinorWorkedMessage(PrintWriter pw) {
+                        super.printMinorWorkedMessage(pw);
+                    }
+
+                    @Override
+                    protected void printDoneMessage(PrintWriter pw) {
+                        super.printDoneMessage(pw);
+                        SystemUtils.LOG.info("Done " + this.getMessage());
+                    }
+                });
+
+                final long duration = timeMonitor.stop();
+
+                TestUtils.log.info(" time: " + ProcessTimeMonitor.formatDuration(duration) + " (" + duration + " s)");
+                if (useStagingDirectory) {
+                    TestUtils.log.info("Copying file to final destination: " + finalOutput.toString());
+                    Files.list(outputFile.toPath().getParent()).forEach(path -> {
+                        try {
+                            Files.copy(path,Paths.get(outputLocation,path.getFileName().toString()), StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+            }catch(Throwable t){
+                SystemUtils.LOG.log(Level.SEVERE,t.getLocalizedMessage(),t);
+                Path failedFile = Paths.get(outputLocation, inputFile.getName() + ".FAILED");
+                if (Files.notExists(failedFile)) {
+                    Files.createFile(failedFile);
+                }
+                throw t;
+            }finally {
+                fh.flush();
+                fh.close();
             }
         });
     }
