@@ -1,16 +1,14 @@
 package be.vito.terrascope.snapgpt;
 
 import com.bc.ceres.core.PrintWriterProgressMonitor;
-import com.bc.ceres.core.ProgressMonitor;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.VoidFunction;
+import org.esa.snap.core.util.SystemUtils;
 import org.esa.snap.engine_utilities.gpf.ProcessTimeMonitor;
 import org.esa.snap.engine_utilities.util.TestUtils;
 import org.esa.snap.graphbuilder.rcp.dialogs.support.GPFProcessor;
-
 
 import java.io.File;
 import java.io.Serializable;
@@ -19,7 +17,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -64,6 +61,9 @@ public class ProcessFilesGPT implements Serializable {
         sparkContext.parallelize(files).foreach( file -> {
             ProcessTimeMonitor timeMonitor = new ProcessTimeMonitor();
             timeMonitor.start();
+            System.err.println("SNAP Application Data Dir: " +SystemUtils.getApplicationDataDir());
+            System.err.println("SNAP Auxiliary Data Dir: " +SystemUtils.getAuxDataPath());
+            System.err.println("SNAP Cache Dir: " +SystemUtils.getCacheDir());
 
             final GPFProcessor proc = new GPFProcessor(new File(xml));
             File inputFile = new File(file);
