@@ -65,7 +65,10 @@ public class ProcessFilesGPT implements Serializable {
         sparkContext.parallelize(files).foreach( file -> {
 
             File inputFile = new File(file);
-
+            Path startedFile = Paths.get(outputLocation, inputFile.getName() + ".PROCESSING");
+            if (Files.notExists(startedFile)) {
+                Files.createFile(startedFile);
+            }
             Handler fh = new FileHandler(Paths.get(outputLocation,inputFile.getName()+ ".log").toFile().getAbsolutePath());
             fh.setLevel (Level.FINE);
             fh.setFormatter(new SimpleFormatter());
@@ -145,6 +148,9 @@ public class ProcessFilesGPT implements Serializable {
                 }
                 throw t;
             }finally {
+                if (Files.exists(startedFile)) {
+                    Files.delete(startedFile);
+                }
                 fh.flush();
                 fh.close();
             }
