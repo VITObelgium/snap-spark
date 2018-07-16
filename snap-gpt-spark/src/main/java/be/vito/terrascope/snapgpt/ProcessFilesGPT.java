@@ -7,7 +7,6 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.esa.snap.core.util.SystemUtils;
 import org.esa.snap.engine_utilities.gpf.ProcessTimeMonitor;
-import org.esa.snap.engine_utilities.util.TestUtils;
 import org.esa.snap.graphbuilder.rcp.dialogs.support.GPFProcessor;
 
 import java.io.File;
@@ -70,7 +69,7 @@ public class ProcessFilesGPT implements Serializable {
                 Files.createFile(startedFile);
             }
             Handler fh = new FileHandler(Paths.get(outputLocation,inputFile.getName()+ ".log").toFile().getAbsolutePath());
-            fh.setLevel (Level.FINE);
+            fh.setLevel (Level.ALL);
             fh.setFormatter(new SimpleFormatter());
 
             Logger logger = Logger.getLogger("org.esa");
@@ -83,6 +82,7 @@ public class ProcessFilesGPT implements Serializable {
 
                 ProcessTimeMonitor timeMonitor = new ProcessTimeMonitor();
                 timeMonitor.start();
+                SystemUtils.init3rdPartyLibs(ProcessFilesGPT.class);
                 System.err.println("SNAP Application Data Dir: " + SystemUtils.getApplicationDataDir());
                 System.err.println("SNAP Auxiliary Data Dir: " + SystemUtils.getAuxDataPath());
                 System.err.println("SNAP Cache Dir: " + SystemUtils.getCacheDir());
@@ -129,9 +129,9 @@ public class ProcessFilesGPT implements Serializable {
 
                 final long duration = timeMonitor.stop();
 
-                TestUtils.log.info(" time: " + ProcessTimeMonitor.formatDuration(duration) + " (" + duration + " s)");
+                SystemUtils.LOG.info(" time: " + ProcessTimeMonitor.formatDuration(duration) + " (" + duration + " s)");
                 if (useStagingDirectory) {
-                    TestUtils.log.info("Copying file to final destination: " + finalOutput.toString());
+                    SystemUtils.LOG.info("Copying file to final destination: " + finalOutput.toString());
                     Files.list(outputFile.toPath().getParent()).forEach(path -> {
                         try {
                             Files.copy(path,Paths.get(outputLocation,path.getFileName().toString()), StandardCopyOption.REPLACE_EXISTING);
