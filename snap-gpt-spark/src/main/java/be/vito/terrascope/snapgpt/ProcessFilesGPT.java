@@ -68,7 +68,8 @@ public class ProcessFilesGPT implements Serializable {
             if (Files.notExists(startedFile)) {
                 Files.createFile(startedFile);
             }
-            Handler fh = new FileHandler(Paths.get(outputLocation,inputFile.getName()+ ".log").toFile().getAbsolutePath());
+            Path logFile = Paths.get(outputLocation, inputFile.getName() + ".log");
+            Handler fh = new FileHandler(logFile.toFile().getAbsolutePath());
             fh.setLevel (Level.ALL);
             fh.setFormatter(new SimpleFormatter());
 
@@ -140,19 +141,21 @@ public class ProcessFilesGPT implements Serializable {
                         }
                     });
                 }
+                fh.flush();
+                fh.close();
+                Files.copy(logFile, Paths.get(outputLocation, inputFile.getName() + ".DONE"),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
             }catch(Throwable t){
                 SystemUtils.LOG.log(Level.SEVERE,t.getLocalizedMessage(),t);
+                fh.flush();
+                fh.close();
                 Path failedFile = Paths.get(outputLocation, inputFile.getName() + ".FAILED");
-                if (Files.notExists(failedFile)) {
-                    Files.createFile(failedFile);
-                }
+                Files.copy(logFile,failedFile,StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
                 throw t;
             }finally {
                 if (Files.exists(startedFile)) {
                     Files.delete(startedFile);
                 }
-                fh.flush();
-                fh.close();
+
             }
         });
     }
