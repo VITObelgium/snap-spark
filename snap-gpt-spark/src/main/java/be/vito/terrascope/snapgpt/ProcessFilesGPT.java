@@ -143,13 +143,13 @@ public class ProcessFilesGPT implements Serializable {
                 }
                 fh.flush();
                 fh.close();
-                Files.copy(logFile, Paths.get(outputLocation, inputFile.getName() + ".DONE"),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
+                Files.move(logFile, Paths.get(outputLocation, inputFile.getName() + ".DONE"),StandardCopyOption.REPLACE_EXISTING);
             }catch(Throwable t){
                 SystemUtils.LOG.log(Level.SEVERE,t.getLocalizedMessage(),t);
                 fh.flush();
                 fh.close();
                 Path failedFile = Paths.get(outputLocation, inputFile.getName() + ".FAILED");
-                Files.copy(logFile,failedFile,StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
+                Files.move(logFile,failedFile,StandardCopyOption.REPLACE_EXISTING);
                 throw t;
             }finally {
                 if (Files.exists(startedFile)) {
