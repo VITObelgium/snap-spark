@@ -60,6 +60,9 @@ public class ProcessFilesGPT implements Serializable {
     private void run() {
         JavaSparkContext sparkContext = JavaSparkContext.fromSparkContext(SparkContext.getOrCreate());
         sparkContext.setLogLevel("WARN");
+        System.out.println("This Spark job will process the following files: " + files);
+        System.out.println("This SNAP workflow file will be applied: " + xml);
+        System.out.println("Output directory: " + outputLocation);
 
         sparkContext.parallelize(files,files.size()).foreach( file -> {
 
