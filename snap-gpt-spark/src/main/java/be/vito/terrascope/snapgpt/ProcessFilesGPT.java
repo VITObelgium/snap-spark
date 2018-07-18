@@ -61,7 +61,7 @@ public class ProcessFilesGPT implements Serializable {
         JavaSparkContext sparkContext = JavaSparkContext.fromSparkContext(SparkContext.getOrCreate());
         sparkContext.setLogLevel("WARN");
 
-        sparkContext.parallelize(files).foreach( file -> {
+        sparkContext.parallelize(files,files.size()).foreach( file -> {
 
             File inputFile = new File(file);
             Path startedFile = Paths.get(outputLocation, inputFile.getName() + ".PROCESSING");
