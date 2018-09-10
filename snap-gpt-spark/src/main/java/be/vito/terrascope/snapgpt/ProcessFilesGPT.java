@@ -39,13 +39,15 @@ public class ProcessFilesGPT implements Serializable {
 
     @Parameter(names = {"-format"}, description = "SNAP format name, by default, the format from the gpt file will be used.", required = false)
     private String formatName = null;
-    
 
     @Parameter(names = {"-noTempFile"}, description = "Do not use a temporary staging directory before writing to the actual output location.", required = false)
     private boolean useStagingDirectory = true;
 
     @Parameter(names = {"-output-regex"}, description = "Regex to apply to input to get output.")
     private String outputRegex = null;
+
+    @Parameter(names = {"-postprocess"}, description = "Postprocessing script file name.", required = false)
+    private String postProcessor = null;
 
     public static void main(String[] args) {
         ProcessFilesGPT processor = new ProcessFilesGPT();
@@ -81,6 +83,7 @@ public class ProcessFilesGPT implements Serializable {
             logger.addHandler (fh);
 
             logger.setLevel (Level.ALL);
+
 
             try {
 
@@ -134,6 +137,12 @@ public class ProcessFilesGPT implements Serializable {
                 final long duration = timeMonitor.stop();
 
                 SystemUtils.LOG.info(" time: " + ProcessTimeMonitor.formatDuration(duration) + " (" + duration + " s)");
+
+                if (postProcessor != null) {
+
+                    doPostProcess(postProcessor, outputFile.toPath(),logFile);
+                }
+
                 if (useStagingDirectory) {
                     SystemUtils.LOG.info("Copying file to final destination: " + finalOutput.toString());
                     Files.list(outputFile.toPath().getParent()).forEach(path -> {
@@ -161,5 +170,27 @@ public class ProcessFilesGPT implements Serializable {
 
             }
         });
+    }
+
+    private void doPostProcess(String postProcessor, Path outputFile, Path logFile) throws IOException, InterruptedException {
+        ProcessBuilder builder = new ProcessBuilder().command(postProcessor, outputFile.toString()).directory(outputFile.getParent().toFile());
+        //builder.redirectErrorStream(true);
+        //builder.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile.toFile()));
+
+        SystemUtils.LOG.log(Level.INFO, "Starting post processing: ");
+        SystemUtils.LOG.log(Level.INFO,String.join(" ", builder.command()));
+        Process process = builder.start();
+        List<String> output = org.apache.commons.io.IOUtils.readLines(process.getErrorStream());
+        for (String s : output) {
+            SystemUtils.LOG.info(s);
+        }
+        //StreamSupport. process.getOutputStream()
+        process.waitFor();
+        process.destroy();
+        if (process.exitValue() != 0) {
+            throw new RuntimeException("Postprocessing failed: " + process.exitValue());
+        }
+
+
     }
 }

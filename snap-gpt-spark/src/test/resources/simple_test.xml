@@ -45,7 +45,7 @@
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
       <file>/tmp/Subset_S2A_20170602T104212Z_31UFS_FAPAR_10M_V100_CLUSTERS.tif</file>
-      <formatName>GeoTIFF</formatName>
+      <formatName>GeoTIFF-BigTIFF</formatName>
     </parameters>
   </node>
   <applicationData id="Presentation">

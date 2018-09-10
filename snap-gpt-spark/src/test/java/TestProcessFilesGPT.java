@@ -51,4 +51,12 @@ public class TestProcessFilesGPT {
         SparkContext.getOrCreate(new SparkConf(true).setAppName(TestProcessFilesGPT.class.getName()).setMaster("local[1]"));
         ProcessFilesGPT.main(new String[]{"-noTempFile","-gpt", gptXML,"-output-dir","/tmp",testProduct});
     }
+
+    @Test
+    public void testPostProcessing() throws URISyntaxException, IOException {
+        String gptXML = Paths.get(Thread.currentThread().getContextClassLoader().getResource("simple_test.xml").toURI()).toAbsolutePath().toString();
+        String postProcessor = Paths.get(Thread.currentThread().getContextClassLoader().getResource("postprocess.py").toURI()).toAbsolutePath().toString();
+        SparkContext.getOrCreate(new SparkConf(true).setAppName(TestProcessFilesGPT.class.getName()).setMaster("local[1]"));
+        ProcessFilesGPT.main(new String[]{"-postprocess",postProcessor,"-noTempFile","-gpt", gptXML,"-output-dir","/tmp",testProduct});
+    }
 }
