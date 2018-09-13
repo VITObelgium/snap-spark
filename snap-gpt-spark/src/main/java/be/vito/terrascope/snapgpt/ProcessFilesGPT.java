@@ -86,6 +86,13 @@ public class ProcessFilesGPT implements Serializable {
 
 
             try {
+                if (postProcessor!=null && !Paths.get(postProcessor).toAbsolutePath().toFile().exists()) {
+                    throw new IllegalArgumentException("Can not find post processor script: " + postProcessor + ". This should be an absolute path, or available in the working directory.");
+                }
+                postProcessor = Paths.get(postProcessor).toAbsolutePath().toString();
+                if (postProcessor!=null && !Paths.get(postProcessor).toAbsolutePath().toFile().canExecute()) {
+                    throw new IllegalArgumentException("The postprocessing script is not executable: " + Paths.get(postProcessor).toAbsolutePath().toString());
+                }
 
                 ProcessTimeMonitor timeMonitor = new ProcessTimeMonitor();
                 timeMonitor.start();
@@ -97,6 +104,9 @@ public class ProcessFilesGPT implements Serializable {
                 System.err.println("Processing file: " + file);
                 System.err.println("Processing workflow: " + xml);
                 System.err.println("Output location: " + outputLocation);
+                if (postProcessor != null) {
+                    SystemUtils.LOG.info("Post processing executable: " + postProcessor);
+                }
 
                 final GPFProcessor proc = new GPFProcessor(new File(xml));
 
@@ -173,6 +183,7 @@ public class ProcessFilesGPT implements Serializable {
     }
 
     private void doPostProcess(String postProcessor, Path outputFile, Path logFile) throws IOException, InterruptedException {
+
         ProcessBuilder builder = new ProcessBuilder().command(postProcessor, outputFile.toString()).directory(outputFile.getParent().toFile());
         //builder.redirectErrorStream(true);
         //builder.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile.toFile()));
