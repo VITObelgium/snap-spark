@@ -86,12 +86,14 @@ public class ProcessFilesGPT implements Serializable {
 
 
             try {
-                if (postProcessor!=null && !Paths.get(postProcessor).toAbsolutePath().toFile().exists()) {
-                    throw new IllegalArgumentException("Can not find post processor script: " + postProcessor + ". This should be an absolute path, or available in the working directory.");
-                }
-                postProcessor = Paths.get(postProcessor).toAbsolutePath().toString();
-                if (postProcessor!=null && !Paths.get(postProcessor).toAbsolutePath().toFile().canExecute()) {
-                    throw new IllegalArgumentException("The postprocessing script is not executable: " + Paths.get(postProcessor).toAbsolutePath().toString());
+                if (postProcessor != null) {
+                    if (!Paths.get(postProcessor).toAbsolutePath().toFile().exists()) {
+                        throw new IllegalArgumentException("Can not find post processor script: " + postProcessor + ". This should be an absolute path, or available in the working directory.");
+                    }
+                    postProcessor = Paths.get(postProcessor).toAbsolutePath().toString();
+                    if (!Paths.get(postProcessor).toAbsolutePath().toFile().canExecute()) {
+                        throw new IllegalArgumentException("The postprocessing script is not executable: " + Paths.get(postProcessor).toAbsolutePath().toString());
+                    }
                 }
 
                 ProcessTimeMonitor timeMonitor = new ProcessTimeMonitor();
