@@ -146,10 +146,8 @@ public class ProcessFilesGPT implements Serializable {
                 final long duration = timeMonitor.stop();
 
                 SystemUtils.LOG.info(" time: " + ProcessTimeMonitor.formatDuration(duration) + " (" + duration + " s)");
-                SystemUtils.LOG.info( "SNAP processing graph produced these files: " );
-                Files.find(outputFile.toPath().getParent(),
-                        Integer.MAX_VALUE,
-                        (filePath, fileAttr) -> fileAttr.isRegularFile())
+                SystemUtils.LOG.info( "SNAP processing graph output directory contains these files: " );
+                Files.list(outputFile.toPath().getParent())
                         .map(Path::toString)
                         .forEach(SystemUtils.LOG::info);
 
