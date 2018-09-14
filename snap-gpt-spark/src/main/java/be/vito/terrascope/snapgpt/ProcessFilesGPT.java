@@ -9,6 +9,8 @@ import org.esa.snap.core.util.SystemUtils;
 import org.esa.snap.engine_utilities.gpf.ProcessTimeMonitor;
 import org.esa.snap.graphbuilder.rcp.dialogs.support.GPFProcessor;
 
+import javax.media.jai.JAI;
+import javax.media.jai.TileCache;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -145,6 +147,12 @@ public class ProcessFilesGPT implements Serializable {
 
                 final long duration = timeMonitor.stop();
 
+                //try to release memory
+                TileCache tileCache = JAI.getDefaultInstance().getTileCache();
+                if (tileCache != null) {
+                    tileCache.flush();
+                }
+                System.gc();
                 SystemUtils.LOG.info(" time: " + ProcessTimeMonitor.formatDuration(duration) + " (" + duration + " s)");
                 SystemUtils.LOG.info( "SNAP processing graph output directory contains these files: " );
                 Files.list(outputFile.toPath().getParent())
