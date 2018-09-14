@@ -115,10 +115,7 @@ public class ProcessFilesGPT implements Serializable {
                 File outputFile = new File(outputLocation, inputFile.toPath().getFileName().toString());
                 File finalOutput = outputFile;
                 if (useStagingDirectory) {
-                    Path tempDir = Paths.get("GPT_TEMPORARY_OUTPUT");
-                    if (!tempDir.toFile().exists()) {
-                        Files.createDirectory(tempDir);
-                    }
+                    Path tempDir = Files.createTempDirectory(Paths.get(".").toAbsolutePath(), "snapoutput");
                     outputFile = tempDir.resolve(inputFile.toPath().getFileName().toString()).toFile();
                 }
                 proc.setIO(inputFile, outputFile, formatName);
@@ -149,9 +146,14 @@ public class ProcessFilesGPT implements Serializable {
                 final long duration = timeMonitor.stop();
 
                 SystemUtils.LOG.info(" time: " + ProcessTimeMonitor.formatDuration(duration) + " (" + duration + " s)");
+                SystemUtils.LOG.info( "SNAP processing graph produced these files: " );
+                Files.find(outputFile.toPath().getParent(),
+                        Integer.MAX_VALUE,
+                        (filePath, fileAttr) -> fileAttr.isRegularFile())
+                        .map(Path::toString)
+                        .forEach(SystemUtils.LOG::info);
 
                 if (postProcessor != null) {
-
                     doPostProcess(postProcessor, outputFile.toPath(),logFile);
                 }
 
