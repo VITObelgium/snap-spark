@@ -79,13 +79,19 @@ public class ProcessFilesGPT implements Serializable {
             }
             List<STACProduct> stacProducts = parseSTACInputFile(inputConfigFile);
             sparkContext.parallelize(stacProducts,stacProducts.size()).foreach( product -> {
-                STACProduct source_grd = product.inputs.get("source_GRD");
-                if (source_grd == null) {
-                    throw new IllegalArgumentException("No source GRD product found in the input metadata. ");
+                if (product.inputs.isEmpty()) {
+                    throw new IllegalArgumentException("No input products found in the metadata. These should be defined by the 'inputs' property.");
                 }
-                Map<String, String> vitoFilenameAsset = source_grd.assets.get("vito_filename");
+                if (product.inputs.size() != 1) {
+                    throw new IllegalArgumentException("More than one input product found, this processor currently only supports one input per output.");
+                }
+                STACProduct sourceProduct = product.inputs.values().iterator().next();
+                if (sourceProduct == null) {
+                    throw new IllegalArgumentException("No source product found in the input metadata. ");
+                }
+                Map<String, String> vitoFilenameAsset = sourceProduct.assets.get("vito_filename");
                 if (vitoFilenameAsset == null) {
-                    throw new IllegalArgumentException("The source GRD product did not specify a local 'vito_filename'. Product ID: " + source_grd.id);
+                    throw new IllegalArgumentException("The source product did not specify a local 'vito_filename'. Product ID: " + sourceProduct.id);
                 }
                 String href = vitoFilenameAsset.get("href");
                 if (href == null) {
