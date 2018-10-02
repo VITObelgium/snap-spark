@@ -98,10 +98,10 @@ public class ProcessFilesGPT implements Serializable {
                     throw new IllegalArgumentException("The vito_filename asset does not contain a href property.");
                 }
                 File inputFile = new File(href);
-                processFile(inputFile, product.id);
                 Gson gson = new Gson();
                 String jsonString = gson.toJson(product);
                 Files.write(Paths.get(outputLocation, product.id + ".json"), jsonString.getBytes());
+                processFile(inputFile, product.id);
             });
         }else{
             System.out.println("This Spark job will process the following files: " + files);
