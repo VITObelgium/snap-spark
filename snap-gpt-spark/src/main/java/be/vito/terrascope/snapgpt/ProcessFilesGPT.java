@@ -99,6 +99,9 @@ public class ProcessFilesGPT implements Serializable {
                 }
                 File inputFile = new File(href);
                 processFile(inputFile, product.id);
+                Gson gson = new Gson();
+                String jsonString = gson.toJson(product);
+                Files.write(Paths.get(outputLocation, product.id + ".json"), jsonString.getBytes());
             });
         }else{
             System.out.println("This Spark job will process the following files: " + files);
