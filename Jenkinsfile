@@ -19,6 +19,10 @@ node ('jenkinsslave1.vgt.vito.be') {
                 sh "zip etc.zip *"
                 sh "hdfs dfs -copyFromLocal -f etc.zip /workflows-dev/snap/"
             }
+            dir("snap-gpt-spark/auxdata") {
+                sh "zip -r auxdata.zip *"
+                sh "hdfs dfs -copyFromLocal -f auxdata.zip /workflows-dev/snap/"
+            }
         }
 
 
