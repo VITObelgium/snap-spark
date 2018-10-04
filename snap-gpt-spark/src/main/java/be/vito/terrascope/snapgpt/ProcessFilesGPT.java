@@ -213,7 +213,8 @@ public class ProcessFilesGPT implements Serializable {
             System.gc();
             SystemUtils.LOG.info(" time: " + ProcessTimeMonitor.formatDuration(duration) + " (" + duration + " s)");
             SystemUtils.LOG.info( "SNAP processing graph output directory contains these files: " );
-            Files.list(outputFile.toPath().getParent())
+            Path tempOutputDir = outputFile.toPath().getParent();
+            Files.list(tempOutputDir)
                     .map(Path::toString)
                     .forEach(SystemUtils.LOG::info);
 
@@ -223,9 +224,10 @@ public class ProcessFilesGPT implements Serializable {
 
             if (useStagingDirectory) {
                 SystemUtils.LOG.info("Copying file to final destination: " + finalOutput.toString());
-                Files.list(outputFile.toPath().getParent()).forEach(path -> {
+                Path finalOutputPath = Paths.get(outputLocation);
+                Files.walk(tempOutputDir).filter(path -> !path.equals(tempOutputDir)).forEach(path -> {
                     try {
-                        Files.copy(path,Paths.get(outputLocation,path.getFileName().toString()), StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(path, finalOutputPath.resolve(tempOutputDir.relativize(path)), StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
