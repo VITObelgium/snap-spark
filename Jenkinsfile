@@ -115,13 +115,14 @@ void build(tests = true){
         def rtMaven = Artifactory.newMavenBuild()
         rtMaven.deployer server: server, releaseRepo: 'libs-release-local', snapshotRepo: 'libs-snapshot-local'
         rtMaven.tool = 'Maven 3.5.0'
+        def goals = '-P default clean install surefire:test@forked-jvm'
         if (!tests) {
-            rtMaven.opts += ' -DskipTests'
+            goals += ' -DskipTests'
         }
         rtMaven.deployer.deployArtifacts = publishable_branches.contains(env.BRANCH_NAME)
         //use '--projects StatisticsMapReduce' in 'goals' to build specific module
         try {
-            buildInfo = rtMaven.run pom: 'pom.xml', goals: '-P default clean install surefire:test@forked-jvm'
+            buildInfo = rtMaven.run pom: 'pom.xml', goals: goals
             try{
                 if(rtMaven.deployer.deployArtifacts )
                     server.publishBuildInfo buildInfo
