@@ -138,7 +138,9 @@ void build(tests = true){
             throw err
         }
         finally {
-            junit '*/target/surefire-reports/*.xml'
+            if (tests) {
+                junit '**/target/surefire-reports/*.xml'
+            }
         }
     }
 }
