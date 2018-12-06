@@ -1,0 +1,4 @@
+*.iml
+.idea/
+target/
+snap-gpt-spark/snapoutput*

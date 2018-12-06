@@ -40,8 +40,13 @@
    		 <groupId>junit</groupId>
     		<artifactId>junit</artifactId>
     		<version>4.12</version>
-	    <scope>test</scope>
-	</dependency>
+	        <scope>test</scope>
+	    </dependency>
+        <dependency>
+            <groupId>be.vito.eodata</groupId>
+            <artifactId>pidclient</artifactId>
+            <version>0.1.5</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -63,6 +68,13 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <useSystemClassLoader>false</useSystemClassLoader>
+                </configuration>
             </plugin>
         </plugins>
     </build>

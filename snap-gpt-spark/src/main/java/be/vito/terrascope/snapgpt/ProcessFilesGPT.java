@@ -1,5 +1,7 @@
 package be.vito.terrascope.snapgpt;
 
+import be.vito.pidclient.LoggingFactory;
+import be.vito.pidclient.ProcessLog;
 import com.bc.ceres.core.PrintWriterProgressMonitor;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -73,42 +75,59 @@ public class ProcessFilesGPT implements Serializable {
 
         System.out.println("This SNAP workflow file will be applied: " + xml);
         System.out.println("Output directory: " + outputLocation);
-        if (files.isEmpty()) {
-            if (inputConfigFile == null) {
-                throw new IllegalArgumentException("Either specify a list of files to process, or specify the '-stac-input' parameter.");
+
+        ProcessLog pidLogger = null;
+
+        try{
+            if (files.isEmpty()) {
+
+                pidLogger = LoggingFactory.logger(null, "CGS_S1_GRD_SIGMA0_L1", null, sparkContext.sc());
+                pidLogger.procStarted();
+
+                if (inputConfigFile == null) {
+                    throw new IllegalArgumentException("Either specify a list of files to process, or specify the '-stac-input' parameter.");
+                }
+                List<STACProduct> stacProducts = parseSTACInputFile(inputConfigFile);
+                sparkContext.parallelize(stacProducts,stacProducts.size()).foreach( product -> {
+                    if (product.inputs.isEmpty()) {
+                        throw new IllegalArgumentException("No input products found in the metadata. These should be defined by the 'inputs' property.");
+                    }
+                    if (product.inputs.size() != 1) {
+                        throw new IllegalArgumentException("More than one input product found, this processor currently only supports one input per output.");
+                    }
+                    STACProduct sourceProduct = product.inputs.values().iterator().next();
+                    if (sourceProduct == null) {
+                        throw new IllegalArgumentException("No source product found in the input metadata. ");
+                    }
+                    Map<String, String> vitoFilenameAsset = sourceProduct.assets.get("vito_filename");
+                    if (vitoFilenameAsset == null) {
+                        throw new IllegalArgumentException("The source product did not specify a local 'vito_filename'. Product ID: " + sourceProduct.id);
+                    }
+                    String href = vitoFilenameAsset.get("href");
+                    if (href == null) {
+                        throw new IllegalArgumentException("The vito_filename asset does not contain a href property.");
+                    }
+                    File inputFile = new File(href);
+                    Gson gson = new Gson();
+                    String jsonString = gson.toJson(product);
+                    Files.write(Paths.get(outputLocation, product.id + ".json"), jsonString.getBytes());
+                    processFile(inputFile, product.id, true);
+                });
+
+                pidLogger.procStopped(0);
+            }else{
+                System.out.println("This Spark job will process the following files: " + files);
+                sparkContext.parallelize(files,files.size()).foreach( file -> {
+                    File inputFile = new File(file);
+                    processFile(inputFile, inputFile.getName(), false);
+                });
             }
-            List<STACProduct> stacProducts = parseSTACInputFile(inputConfigFile);
-            sparkContext.parallelize(stacProducts,stacProducts.size()).foreach( product -> {
-                if (product.inputs.isEmpty()) {
-                    throw new IllegalArgumentException("No input products found in the metadata. These should be defined by the 'inputs' property.");
-                }
-                if (product.inputs.size() != 1) {
-                    throw new IllegalArgumentException("More than one input product found, this processor currently only supports one input per output.");
-                }
-                STACProduct sourceProduct = product.inputs.values().iterator().next();
-                if (sourceProduct == null) {
-                    throw new IllegalArgumentException("No source product found in the input metadata. ");
-                }
-                Map<String, String> vitoFilenameAsset = sourceProduct.assets.get("vito_filename");
-                if (vitoFilenameAsset == null) {
-                    throw new IllegalArgumentException("The source product did not specify a local 'vito_filename'. Product ID: " + sourceProduct.id);
-                }
-                String href = vitoFilenameAsset.get("href");
-                if (href == null) {
-                    throw new IllegalArgumentException("The vito_filename asset does not contain a href property.");
-                }
-                File inputFile = new File(href);
-                Gson gson = new Gson();
-                String jsonString = gson.toJson(product);
-                Files.write(Paths.get(outputLocation, product.id + ".json"), jsonString.getBytes());
-                processFile(inputFile, product.id);
-            });
-        }else{
-            System.out.println("This Spark job will process the following files: " + files);
-            sparkContext.parallelize(files,files.size()).foreach( file -> {
-                File inputFile = new File(file);
-                processFile(inputFile, inputFile.getName());
-            });
+        }
+        catch(Exception ex){
+            if(pidLogger != null){
+                pidLogger.procStopped(1, ex.getMessage());
+            }
+            throw ex;
         }
 
     }
@@ -128,7 +147,15 @@ public class ProcessFilesGPT implements Serializable {
         }
     }
 
-    private void processFile(File inputFile, String outputName) throws IOException, GraphException, InterruptedException {
+    private void processFile(File inputFile, String outputName, boolean enablePidLogging) throws IOException, GraphException, InterruptedException {
+
+        ProcessLog pidLogger = null;
+        if(enablePidLogging){
+            pidLogger = LoggingFactory.logger(null, "CGS_S1_GRD_SIGMA0_L1", null);
+            pidLogger.addFile(inputFile.getAbsolutePath(), "input");
+            pidLogger.procStarted();
+        }
+
         Path startedFile = Paths.get(outputLocation, outputName + ".PROCESSING");
         if (Files.notExists(startedFile)) {
             Files.createFile(startedFile);
@@ -236,12 +263,16 @@ public class ProcessFilesGPT implements Serializable {
             fh.flush();
             fh.close();
             Files.move(logFile, Paths.get(outputLocation, outputName + ".DONE"),StandardCopyOption.REPLACE_EXISTING);
+            if(pidLogger != null)
+                pidLogger.procStopped(0);
         }catch(Throwable t){
             SystemUtils.LOG.log(Level.SEVERE,t.getLocalizedMessage(),t);
             fh.flush();
             fh.close();
             Path failedFile = Paths.get(outputLocation, outputName + ".FAILED");
             Files.move(logFile,failedFile,StandardCopyOption.REPLACE_EXISTING);
+            if(pidLogger != null)
+                pidLogger.procStopped(1, t.getMessage());
             throw t;
         }finally {
             if (Files.exists(startedFile)) {
