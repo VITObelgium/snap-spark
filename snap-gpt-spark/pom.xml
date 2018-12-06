@@ -45,7 +45,7 @@
         <dependency>
             <groupId>be.vito.eodata</groupId>
             <artifactId>pidclient</artifactId>
-            <version>0.1.5</version>
+            <version>${pidclient.version}</version>
         </dependency>
     </dependencies>
     <build>
