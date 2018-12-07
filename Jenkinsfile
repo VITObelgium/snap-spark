@@ -93,11 +93,8 @@ String getReleaseVersion() {
 }
 
 String getPidClientVersion() {
-    pom = readMavenPom file: 'pom.xml'
+    pom = readMavenPom file: 'snap-gpt-spark/pom.xml'
     version = pom.properties['pidclient.version']
-    if (version == null){
-        version = pom.parent.properties['pidclient.version']
-    }
     return version
 }
 
