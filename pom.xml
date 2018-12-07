@@ -16,7 +16,6 @@
         <s1tbx.version>6.0.4</s1tbx.version>
         <snap.version>6.0.2</snap.version>
         <s3tbx.version>6.0.4</s3tbx.version>
-        <pidclient.version>0.1.6</pidclient.version>
     </properties>
     <build>
         <pluginManagement>
