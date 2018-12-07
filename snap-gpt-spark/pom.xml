@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <pidclient.version>0.1.6</pidclient.version>
+        <pidclient.version>0.1.7</pidclient.version>
     </properties>
 
     <artifactId>snap-gpt-spark</artifactId>
@@ -50,6 +50,8 @@
             <groupId>be.vito.eodata</groupId>
             <artifactId>pidclient</artifactId>
             <version>${pidclient.version}</version>
+            <classifier>jar-with-dependencies</classifier>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>
