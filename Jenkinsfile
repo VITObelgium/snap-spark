@@ -13,18 +13,7 @@ node ('jenkinsslave1.vgt.vito.be') {
         stage('Deploy to Dev') {
             //milestone ensures that previous builds that have reached this point are aborted
             milestone()
-            pidclient_version = getPidClientVersion()
-            sh "hdfs dfs -copyFromLocal -f snap-bundle/target/snap-bundle/snap-all-*.jar /workflows-dev/snap/"
-            sh "hdfs dfs -copyFromLocal -f snap-gpt-spark/target/snap-gpt-spark-${rel_version}.jar /workflows-dev/snap/"
-            sh "hdfs dfs -copyFromLocal -f /localdata/M2/be/vito/eodata/pidclient/${pidclient_version}/pidclient-${pidclient_version}-jar-with-dependencies.jar /workflows-dev/snap/"
-            dir("snap-gpt-spark/etc") {
-                sh "zip etc.zip *"
-                sh "hdfs dfs -copyFromLocal -f etc.zip /workflows-dev/snap/"
-            }
-            dir("snap-gpt-spark/auxdata") {
-                sh "zip -r auxdata.zip *"
-                sh "hdfs dfs -copyFromLocal -f auxdata.zip /workflows-dev/snap/"
-            }
+            deploy("/workflows-dev/snap/",rel_version)
         }
 
 
@@ -52,6 +41,8 @@ if(deployable_branches.contains(env.BRANCH_NAME)){
             echo "releasing version ${rel_version}"
             build(tests = false)
 
+            deploy("/workflows/snap/",rel_version)
+
             withMavenEnv(["JAVA_OPTS=-Xmx1536m -Xms512m","HADOOP_CONF_DIR=/etc/hadoop/conf/"]){
                 withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'BobDeBouwer', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD']]) {
                     sh "git commit -a -m 'Set version v${rel_version} in pom for release'"
@@ -68,6 +59,21 @@ if(deployable_branches.contains(env.BRANCH_NAME)){
 
 
         }
+    }
+}
+
+void deploy(hdfs_dir="/workflows/snap/",rel_version){
+    pidclient_version = getPidClientVersion()
+    sh "hdfs dfs -copyFromLocal -f snap-bundle/target/snap-bundle/snap-all-*.jar "+hdfs_dir
+    sh "hdfs dfs -copyFromLocal -f snap-gpt-spark/target/snap-gpt-spark-${rel_version}.jar " + hdfs_dir
+    sh "hdfs dfs -copyFromLocal -f /localdata/M2/be/vito/eodata/pidclient/${pidclient_version}/pidclient-${pidclient_version}-jar-with-dependencies.jar "+hdfs_dir
+    dir("snap-gpt-spark/etc") {
+        sh "zip etc.zip *"
+        sh "hdfs dfs -copyFromLocal -f etc.zip " + hdfs_dir
+    }
+    dir("snap-gpt-spark/auxdata") {
+        sh "zip -r auxdata.zip *"
+        sh "hdfs dfs -copyFromLocal -f auxdata.zip ${hdfs_dir}"
     }
 }
 
