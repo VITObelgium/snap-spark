@@ -27,19 +27,22 @@ public class TestProcessFilesGPT {
     }
 
     @Test
-    public void testSimpleGraphSTACInput() throws URISyntaxException {
+    public void testSimpleGraphSTACInput() throws URISyntaxException, IOException {
+        Path tempDirWithPrefix = Files.createTempDirectory("snapsparktest");
         String gptXML = getAbsolutePath("simple_test.xml");
         String jsonConfig = getAbsolutePath("minimal_input.json");
         SparkContext.getOrCreate(new SparkConf(true).setAppName(TestProcessFilesGPT.class.getName()).setMaster("local[1]"));
-        ProcessFilesGPT.main(new String[]{"-gpt", gptXML,"-output-dir","/tmp","-stac-input",jsonConfig});
-        assertTrue(Files.exists(Paths.get("/tmp","S1A_IW_GRDH_SIGMA0_DV_20180930T054051_ASCENDING_59_3299_V001.tif")));
+        ProcessFilesGPT.main(new String[]{"-gpt", gptXML,"-output-dir",tempDirWithPrefix.toString(),"-stac-input",jsonConfig});
+        assertTrue(Files.exists(tempDirWithPrefix.resolve("S1A_IW_GRDH_SIGMA0_DV_20180930T054051_ASCENDING_59_3299_V001.tif")));
     }
 
     @Test
-    public void testSimpleGraphOtherOutputformat() throws URISyntaxException {
+    public void testSimpleGraphOtherOutputformat() throws URISyntaxException, IOException {
+        Path tempDirWithPrefix = Files.createTempDirectory("snapsparktest");
         String gptXML = getAbsolutePath("simple_test.xml");
         SparkContext.getOrCreate(new SparkConf(true).setAppName(TestProcessFilesGPT.class.getName()).setMaster("local[1]"));
-        ProcessFilesGPT.main(new String[]{"-gpt", gptXML,"-output-dir","/tmp","-format","BEAM-DIMAP",testProduct});
+        ProcessFilesGPT.main(new String[]{"-gpt", gptXML,"-output-dir",tempDirWithPrefix.toString(),"-format","BEAM-DIMAP",testProduct});
+        assertTrue(tempDirWithPrefix.resolve("S2A_20180618T101021Z_32TPP_FAPAR_10M_V102.tif.data").toFile().exists());
     }
 
     @Test
