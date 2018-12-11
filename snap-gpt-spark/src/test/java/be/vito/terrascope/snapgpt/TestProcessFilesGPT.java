@@ -48,7 +48,7 @@ public class TestProcessFilesGPT {
     @Test
     public void testErrorHandling() throws URISyntaxException, IOException {
         String gptXML = getAbsolutePath("simple_test.xml");
-        SparkContext.getOrCreate(new SparkConf(true).setAppName(TestProcessFilesGPT.class.getName()).setMaster("local[1]"));
+        SparkContext.getOrCreate(new SparkConf(true).setAppName(TestProcessFilesGPT.class.getName()).setMaster("local[1,2]"));
         try {
 
             ProcessFilesGPT.main(new String[]{"-gpt", gptXML, "-output-dir", "/tmp", "-format", "BEAM-DIMAP", "doesntExist.tif"});
@@ -56,6 +56,9 @@ public class TestProcessFilesGPT {
         } catch (Throwable throwable) {
             throwable.printStackTrace();
             Path path = Paths.get("/tmp/doesntExist.tif.FAILED");
+            Assert.assertTrue(Files.exists(path));
+            Files.delete(path);
+            path = Paths.get("/tmp/doesntExist.tif.FAILED.0");
             Assert.assertTrue(Files.exists(path));
             Files.delete(path);
         }

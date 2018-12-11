@@ -10,6 +10,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import org.apache.commons.io.IOUtils;
 import org.apache.spark.SparkContext;
+import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.esa.snap.core.gpf.graph.GraphException;
 import org.esa.snap.core.util.SystemUtils;
@@ -149,8 +150,18 @@ public class ProcessFilesGPT implements Serializable {
         }
     }
 
-    private void processFile(File inputFile, String outputName, boolean enablePidLogging) throws IOException, GraphException, InterruptedException {
-
+    private void processFile(File inputFile,final String outputName, boolean enablePidLogging) throws IOException, GraphException, InterruptedException {
+        Path failedFile = Paths.get(outputLocation, outputName + ".FAILED");
+        if (Files.exists(failedFile)) {
+            Path failedAttemptFile = null;
+            TaskContext taskContext = TaskContext.get();
+            if (taskContext != null) {
+                failedAttemptFile = Paths.get(outputLocation, outputName + ".FAILED." + (taskContext.attemptNumber()-1));
+            }else{
+                failedAttemptFile = Paths.get(outputLocation, outputName + ".FAILED.previous");
+            }
+            Files.move(failedFile, failedAttemptFile);
+        }
         ProcessLog pidLogger = null;
         if(enablePidLogging){
             pidLogger = LoggingFactory.logger(outputName, "CGS_S1_GRD_SIGMA0_L1", null);
@@ -281,7 +292,6 @@ public class ProcessFilesGPT implements Serializable {
             SystemUtils.LOG.log(Level.SEVERE,t.getLocalizedMessage(),t);
             fh.flush();
             fh.close();
-            Path failedFile = Paths.get(outputLocation, outputName + ".FAILED");
             Files.move(logFile,failedFile,StandardCopyOption.REPLACE_EXISTING);
             if(pidLogger != null)
                 pidLogger.procStopped(1, t.getMessage());
