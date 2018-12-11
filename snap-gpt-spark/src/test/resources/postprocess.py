@@ -1,7 +1,7 @@
 #!/usr/bin/python3
-
 import glob
 import sys
+import time
 
 if len(sys.argv) is 2:
     filename = sys.argv[1]
@@ -9,6 +9,9 @@ if len(sys.argv) is 2:
     if(len(files) is not 1):
         raise ValueError( 'Found too many or too few files for postprocessing: ' + str(files))
     #file found, postprocessing can happen here!
-    print("Processing file: " + files[0])
+    print("Processing file: " + files[0] )
+    sys.stderr.write("some error")
+    time.sleep(5)
+    print("Done Processing file: " + files[0])
 else:
     raise ValueError('Invalid argument list: ' + str(sys.argv))

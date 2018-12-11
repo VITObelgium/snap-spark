@@ -8,6 +8,7 @@ import com.beust.jcommander.Parameter;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
+import org.apache.commons.io.IOUtils;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.esa.snap.core.gpf.graph.GraphException;
@@ -26,6 +27,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.logging.*;
 
 
@@ -151,7 +153,7 @@ public class ProcessFilesGPT implements Serializable {
 
         ProcessLog pidLogger = null;
         if(enablePidLogging){
-            pidLogger = LoggingFactory.logger(null, "CGS_S1_GRD_SIGMA0_L1", null);
+            pidLogger = LoggingFactory.logger(outputName, "CGS_S1_GRD_SIGMA0_L1", null);
             pidLogger.addFile(inputFile.getAbsolutePath(), "input");
             pidLogger.procStarted();
         }
@@ -193,8 +195,15 @@ public class ProcessFilesGPT implements Serializable {
             System.err.println("Processing file: " + inputFile.getName());
             System.err.println("Processing workflow: " + xml);
             System.err.println("Output location: " + outputLocation);
+            if (enablePidLogging) {
+                pidLogger.addTrace("Processing workflow: " + xml);
+                pidLogger.addTrace("Output location: " + outputLocation);
+            }
             if (postProcessor != null) {
                 SystemUtils.LOG.info("Post processing executable: " + postProcessor);
+                if (enablePidLogging) {
+                    pidLogger.addTrace("Post processing executable: " + postProcessor);
+                }
             }
 
             final GPFProcessor proc = new GPFProcessor(new File(xml));
@@ -246,7 +255,10 @@ public class ProcessFilesGPT implements Serializable {
                     .forEach(SystemUtils.LOG::info);
 
             if (postProcessor != null) {
-                doPostProcess(postProcessor, outputFile.toPath(),logFile);
+                if (enablePidLogging) {
+                    pidLogger.addTrace("Starting postprocessing.");
+                }
+                doPostProcess(postProcessor, outputFile.toPath(),logFile,pidLogger);
             }
 
             if (useStagingDirectory) {
@@ -282,22 +294,54 @@ public class ProcessFilesGPT implements Serializable {
         }
     }
 
-    private void doPostProcess(String postProcessor, Path outputFile, Path logFile) throws IOException, InterruptedException {
+    private static class IOThreadHandler extends Thread {
+        private InputStream inputStream;
+        private final ProcessLog pidLogger;
+
+        IOThreadHandler(InputStream inputStream, ProcessLog pidLogger) {
+            this.inputStream = inputStream;
+            this.pidLogger = pidLogger;
+        }
+
+        public void run() {
+            Scanner br = null;
+            try {
+                br = new Scanner(new InputStreamReader(inputStream));
+                String line = null;
+                while (br.hasNextLine()) {
+                    line = br.nextLine();
+                    SystemUtils.LOG.info(line);
+                    if (pidLogger != null) {
+                        pidLogger.addTrace(line);
+                    }
+                }
+            }  finally {
+                br.close();
+            }
+        }
+
+    }
+
+    static void doPostProcess(String postProcessor, Path outputFile, Path logFile, ProcessLog pidLogger) throws IOException, InterruptedException {
 
         ProcessBuilder builder = new ProcessBuilder().command(postProcessor, outputFile.toString()).directory(outputFile.getParent().toFile());
-        //builder.redirectErrorStream(true);
-        //builder.redirectOutput(ProcessBuilder.Redirect.appendTo(logFile.toFile()));
+        builder.environment().put("PYTHONUNBUFFERED", "1");
 
         SystemUtils.LOG.log(Level.INFO, "Starting post processing: ");
         SystemUtils.LOG.log(Level.INFO,String.join(" ", builder.command()));
         Process process = builder.start();
-        List<String> output = org.apache.commons.io.IOUtils.readLines(process.getErrorStream());
-        for (String s : output) {
-            SystemUtils.LOG.info(s);
-        }
-        //StreamSupport. process.getOutputStream()
+
+        IOThreadHandler outputHandler = new IOThreadHandler(process.getInputStream(),pidLogger);
+        outputHandler.start();
+
         process.waitFor();
+
+        List<String> errors = IOUtils.readLines(process.getErrorStream());
+        for (String error : errors) {
+            SystemUtils.LOG.severe(error);
+        }
         process.destroy();
+        outputHandler.join();
         if (process.exitValue() != 0) {
             throw new RuntimeException("Postprocessing failed: " + process.exitValue());
         }

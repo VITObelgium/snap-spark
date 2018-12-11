@@ -74,6 +74,12 @@ public class TestProcessFilesGPT {
         ProcessFilesGPT.main(new String[]{"-postprocess",postProcessor,"-noTempFile","-gpt", gptXML,"-output-dir","/tmp",testProduct});
     }
 
+    @Test
+    public void testPostProcessingNoSpark() throws URISyntaxException, IOException, InterruptedException {
+        String postProcessor = getAbsolutePath("postprocess.py");
+        ProcessFilesGPT.doPostProcess(postProcessor, Paths.get(postProcessor),null, null);
+    }
+
     private String getAbsolutePath(String classPathFile) throws URISyntaxException {
         return Paths.get(Thread.currentThread().getContextClassLoader().getResource(classPathFile).toURI()).toAbsolutePath().toString();
     }
