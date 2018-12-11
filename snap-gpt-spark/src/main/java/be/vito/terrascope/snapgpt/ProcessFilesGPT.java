@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -80,6 +81,7 @@ public class ProcessFilesGPT implements Serializable {
         System.out.println("Output directory: " + outputLocation);
 
         ProcessLog pidLogger = null;
+        List<String> resultFiles = new ArrayList<String>();
 
         try{
             if (files.isEmpty()) {
@@ -91,7 +93,7 @@ public class ProcessFilesGPT implements Serializable {
                     throw new IllegalArgumentException("Either specify a list of files to process, or specify the '-stac-input' parameter.");
                 }
                 List<STACProduct> stacProducts = parseSTACInputFile(inputConfigFile);
-                sparkContext.parallelize(stacProducts,stacProducts.size()).foreach( product -> {
+                resultFiles.addAll( sparkContext.parallelize(stacProducts,stacProducts.size()).map( product -> {
                     if (product.inputs.isEmpty()) {
                         throw new IllegalArgumentException("No input products found in the metadata. These should be defined by the 'inputs' property.");
                     }
@@ -114,16 +116,20 @@ public class ProcessFilesGPT implements Serializable {
                     Gson gson = new Gson();
                     String jsonString = gson.toJson(product);
                     Files.write(Paths.get(outputLocation, product.id + ".json"), jsonString.getBytes());
-                    processFile(inputFile, product.id, true);
-                });
+                    return processFile(inputFile, product.id, true);
+                }).collect());
 
                 pidLogger.procStopped(0);
             }else{
                 System.out.println("This Spark job will process the following files: " + files);
-                sparkContext.parallelize(files,files.size()).foreach( file -> {
+                resultFiles.addAll(sparkContext.parallelize(files, files.size()).map(file -> {
                     File inputFile = new File(file);
-                    processFile(inputFile, inputFile.getName(), false);
-                });
+                    return processFile(inputFile, inputFile.getName(), false);
+                }).collect());
+            }
+            List<String> failed = resultFiles.stream().filter(filename -> filename.endsWith("FAILED")).collect(Collectors.toList());
+            if (!failed.isEmpty()) {
+                throw new RuntimeException("Processing failed for these files:\n" + String.join("\n", failed));
             }
         }
         catch(Exception ex){
@@ -150,7 +156,7 @@ public class ProcessFilesGPT implements Serializable {
         }
     }
 
-    private void processFile(File inputFile,final String outputName, boolean enablePidLogging) throws IOException, GraphException, InterruptedException {
+    private String processFile(File inputFile,final String outputName, boolean enablePidLogging) throws IOException, GraphException, InterruptedException {
         Path failedFile = Paths.get(outputLocation, outputName + ".FAILED");
         if (Files.exists(failedFile)) {
             Path failedAttemptFile = null;
@@ -285,9 +291,11 @@ public class ProcessFilesGPT implements Serializable {
             }
             fh.flush();
             fh.close();
-            Files.move(logFile, Paths.get(outputLocation, outputName + ".DONE"),StandardCopyOption.REPLACE_EXISTING);
+            Path doneFile = Paths.get(outputLocation, outputName + ".DONE");
+            Files.move(logFile, doneFile,StandardCopyOption.REPLACE_EXISTING);
             if(pidLogger != null)
                 pidLogger.procStopped(0);
+            return doneFile.toString();
         }catch(Throwable t){
             SystemUtils.LOG.log(Level.SEVERE,t.getLocalizedMessage(),t);
             fh.flush();
@@ -295,7 +303,15 @@ public class ProcessFilesGPT implements Serializable {
             Files.move(logFile,failedFile,StandardCopyOption.REPLACE_EXISTING);
             if(pidLogger != null)
                 pidLogger.procStopped(1, t.getMessage());
-            throw t;
+            TaskContext taskContext = TaskContext.get();
+            if (taskContext != null) {
+                if (taskContext.attemptNumber() < 3) {
+                    throw t;
+                }
+            }else{
+                throw t;
+            }
+            return failedFile.toString();
         }finally {
             if (Files.exists(startedFile)) {
                 Files.delete(startedFile);
