@@ -222,6 +222,9 @@ public class ProcessFilesGPT implements Serializable {
                     pidLogger.addTrace("Post processing executable: " + postProcessor);
                 }
             }
+            if (pidLogger != null) {
+                pidLogger.writeLog();
+            }
 
             final GPFProcessor proc = new GPFProcessor(new File(xml));
 
@@ -274,6 +277,7 @@ public class ProcessFilesGPT implements Serializable {
             if (postProcessor != null) {
                 if (enablePidLogging) {
                     pidLogger.addTrace("Starting postprocessing.");
+                    pidLogger.writeLog();
                 }
                 doPostProcess(postProcessor, outputFile.toPath(),logFile,pidLogger);
             }
@@ -339,6 +343,7 @@ public class ProcessFilesGPT implements Serializable {
                     SystemUtils.LOG.info(line);
                     if (pidLogger != null) {
                         pidLogger.addTrace(line);
+                        pidLogger.writeLog();
                     }
                 }
             }  finally {
