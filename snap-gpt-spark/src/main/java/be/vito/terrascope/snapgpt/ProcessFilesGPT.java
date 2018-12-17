@@ -166,7 +166,8 @@ public class ProcessFilesGPT implements Serializable {
             }else{
                 failedAttemptFile = Paths.get(outputLocation, outputName + ".FAILED.previous");
             }
-            Files.move(failedFile, failedAttemptFile);
+            //yarn launches multiple attempts, so file may already exist
+            Files.move(failedFile, failedAttemptFile,StandardCopyOption.REPLACE_EXISTING);
         }
         ProcessLog pidLogger = null;
         if(enablePidLogging){
