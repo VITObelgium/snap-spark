@@ -1,5 +1,6 @@
 package be.vito.terrascope.snapgpt;
 
+import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.junit.Assert;
@@ -12,8 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class TestProcessFilesGPT {
 
@@ -100,9 +100,15 @@ public class TestProcessFilesGPT {
         STACProduct product = result.get(0);
         assertNotNull(product);
         assertNotNull(product.id);
+        assertNotNull(product.geometry);
+        assertEquals("MultiPolygon",product.geometry.get("type"));
         STACProduct source_grd = product.inputs.get("source_GRD");
         assertNotNull(source_grd);
         assertNotNull(source_grd.assets.get("vito_filename"));
+
+        Gson gson = new Gson();
+        String jsonString = gson.toJson(product);
+        System.out.println("jsonString = " + jsonString);
 
     }
 
