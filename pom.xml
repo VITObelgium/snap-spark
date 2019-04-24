@@ -7,7 +7,7 @@
     <groupId>be.vito.eodata</groupId>
     <artifactId>snap-spark</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3</version>
     <modules>
         <module>snap-bundle</module>
         <module>snap-gpt-spark</module>
