@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <pidclient.version>0.1.7</pidclient.version>
+        <pidclient.version>0.1.9</pidclient.version>
     </properties>
 
     <artifactId>snap-gpt-spark</artifactId>
