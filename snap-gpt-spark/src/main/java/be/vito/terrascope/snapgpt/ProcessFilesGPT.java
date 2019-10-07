@@ -28,6 +28,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.logging.*;
 import java.util.stream.Collectors;
@@ -227,7 +228,7 @@ public class ProcessFilesGPT implements Serializable {
                 pidLogger.writeLog();
             }
 
-            final GPFProcessor proc = new GPFProcessor(new File(xml));
+            final GPFProcessor proc = new GPFProcessor(new File(xml),new HashMap());
 
             File outputFile = new File(outputLocation, outputName);
             File finalOutput = outputFile;
