@@ -2,6 +2,8 @@ package be.vito.terrascope.snapgpt;
 
 import be.vito.pidclient.LoggingFactory;
 import be.vito.pidclient.ProcessLog;
+import com.bc.ceres.binding.dom.DefaultDomElement;
+import com.bc.ceres.binding.dom.DomElement;
 import com.bc.ceres.core.PrintWriterProgressMonitor;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -12,10 +14,12 @@ import org.apache.commons.io.IOUtils;
 import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.esa.snap.core.gpf.graph.GraphException;
+import org.esa.snap.core.gpf.OperatorSpi;
+import org.esa.snap.core.gpf.common.ReadOp;
+import org.esa.snap.core.gpf.common.WriteOp;
+import org.esa.snap.core.gpf.graph.*;
 import org.esa.snap.core.util.SystemUtils;
 import org.esa.snap.engine_utilities.gpf.ProcessTimeMonitor;
-import org.esa.snap.graphbuilder.rcp.dialogs.support.GPFProcessor;
 
 import javax.media.jai.JAI;
 import javax.media.jai.TileCache;
@@ -25,11 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Scanner;
+import java.util.*;
 import java.util.logging.*;
 import java.util.stream.Collectors;
 
@@ -64,6 +64,8 @@ public class ProcessFilesGPT implements Serializable {
     @Parameter(names = {"-postprocess"}, description = "Postprocessing script file name.", required = false)
     private String postProcessor = null;
 
+    private Graph graph;
+
     public static void main(String[] args) {
         ProcessFilesGPT processor = new ProcessFilesGPT();
         JCommander.newBuilder()
@@ -80,6 +82,17 @@ public class ProcessFilesGPT implements Serializable {
 
         System.out.println("This SNAP workflow file will be applied: " + xml);
         System.out.println("Output directory: " + outputLocation);
+
+        try (FileReader f = new FileReader(xml)){
+            this.graph = GraphIO.read(f, new HashMap<>());
+
+        } catch (FileNotFoundException e) {
+            throw new IllegalArgumentException("Could not find graph file: " + xml);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Error while reading graph: " + xml, e);
+        } catch (GraphException e) {
+            throw new IllegalArgumentException("Error while reading graph: " + xml, e);
+        }
 
         ProcessLog pidLogger = null;
         List<String> resultFiles = new ArrayList<String>();
@@ -228,7 +241,6 @@ public class ProcessFilesGPT implements Serializable {
                 pidLogger.writeLog();
             }
 
-            final GPFProcessor proc = new GPFProcessor(new File(xml),new HashMap());
 
             File outputFile = new File(outputLocation, outputName);
             File finalOutput = outputFile;
@@ -236,8 +248,8 @@ public class ProcessFilesGPT implements Serializable {
                 Path tempDir = Files.createTempDirectory(Paths.get(".").toAbsolutePath(), "snapoutput");
                 outputFile = tempDir.resolve(outputName).toFile();
             }
-            proc.setIO(inputFile, outputFile, formatName);
-            proc.executeGraph(new PrintWriterProgressMonitor(System.out){
+            setIO(inputFile, outputFile, formatName);
+            new GraphProcessor().executeGraph(this.graph, new PrintWriterProgressMonitor(System.out){
                 @Override
                 protected void printStartMessage(PrintWriter pw) {
                     super.printStartMessage(pw);
@@ -324,6 +336,43 @@ public class ProcessFilesGPT implements Serializable {
             }
 
         }
+    }
+
+    private void setIO(File srcFile, File tgtFile, String format) {
+        String readOperatorAlias = OperatorSpi.getOperatorAlias(ReadOp.class);
+        Node readerNode = findNode(this.graph, readOperatorAlias);
+        if (readerNode != null) {
+            DomElement param = new DefaultDomElement("parameters");
+            param.createChild("file").setValue(srcFile.getAbsolutePath());
+            readerNode.setConfiguration(param);
+        }
+
+        String writeOperatorAlias = OperatorSpi.getOperatorAlias(WriteOp.class);
+        Node writerNode = findNode(this.graph, writeOperatorAlias);
+        if (writerNode != null && tgtFile != null) {
+            DomElement origParam = writerNode.getConfiguration();
+            ((DomElement)origParam.getChild("file")).setValue(tgtFile.getAbsolutePath());
+            if (format != null) {
+                ((DomElement)origParam.getChild("formatName")).setValue(format);
+            }
+        }
+
+    }
+
+
+
+    private static Node findNode(Graph graph, String alias) {
+        Node[] var2 = graph.getNodes();
+        int var3 = var2.length;
+
+        for(int var4 = 0; var4 < var3; ++var4) {
+            Node n = var2[var4];
+            if (n.getOperatorName().equals(alias)) {
+                return n;
+            }
+        }
+
+        return null;
     }
 
     private static class IOThreadHandler extends Thread {

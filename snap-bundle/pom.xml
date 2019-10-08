@@ -62,11 +62,6 @@
             <artifactId>snap-gpf</artifactId>
             <version>${snap.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.esa.snap</groupId>
-            <artifactId>snap-graph-builder</artifactId>
-            <version>${snap.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>org.esa.s1tbx</groupId>
