@@ -72,6 +72,8 @@ void deploy(hdfs_dir="/workflows/snap/",rel_version){
         sh "hdfs dfs -copyFromLocal -f etc.zip " + hdfs_dir
     }
     dir("snap-gpt-spark/auxdata") {
+        sh "mkdir -p dem/egm96"
+        sh "wget -P dem/egm96 http://step.esa.int/auxdata/dem/egm96/ww15mgh_b.zip"
         sh "zip -r auxdata.zip *"
         sh "hdfs dfs -copyFromLocal -f auxdata.zip ${hdfs_dir}"
     }
