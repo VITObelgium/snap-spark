@@ -127,7 +127,7 @@ void build(tests = true){
         sh 'echo $JAVA_HOME'
         def server = Artifactory.server('vitoartifactory')
         def rtMaven = Artifactory.newMavenBuild()
-        rtMaven.deployer server: server, releaseRepo: 'libs-release-local', snapshotRepo: 'libs-snapshot-local'
+        rtMaven.deployer server: server, releaseRepo: 'libs-release-public', snapshotRepo: 'libs-snapshot-public'
         rtMaven.tool = 'Maven 3.5.0'
         def goals = '-P default clean install surefire:test@forked-jvm'
         if (!tests) {

@@ -18,6 +18,18 @@
         <snap.version>7.0.2</snap.version>
         <s3tbx.version>7.0.0</s3tbx.version>
     </properties>
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <name>artifactory.vgt.vito.be-releases-public</name>
+            <url>http://artifactory.vgt.vito.be/libs-release-public</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>artifactory.vgt.vito.be-snapshots-public</name>
+            <url>http://artifactory.vgt.vito.be/libs-snapshot-public</url>
+        </snapshotRepository>
+    </distributionManagement>
     <build>
         <pluginManagement>
             <plugins>
