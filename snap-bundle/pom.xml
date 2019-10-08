@@ -270,8 +270,9 @@
                                     <Extension-Name>com.sun.media.imageio</Extension-Name>
                                 </manifestEntries>
                             </archive>
+                            <finalName>snap-bundle/snap-all-${snap.version}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
-                            <attach>false</attach>
+                            <attach>true</attach>
                         </configuration>
                         <phase>package</phase>
                         <goals>
