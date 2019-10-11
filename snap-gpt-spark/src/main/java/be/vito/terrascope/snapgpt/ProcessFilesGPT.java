@@ -64,7 +64,21 @@ public class ProcessFilesGPT implements Serializable {
     @Parameter(names = {"-postprocess"}, description = "Postprocessing script file name.", required = false)
     private String postProcessor = null;
 
-    private Graph graph;
+
+    private transient Graph graph;
+
+    private Graph loadGraph(){
+        try (FileReader f = new FileReader(getXml())){
+            return GraphIO.read(f, new HashMap<>());
+
+        } catch (FileNotFoundException e) {
+            throw new IllegalArgumentException("Could not find graph file: " + getXml());
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Error while reading graph: " + getXml(), e);
+        } catch (GraphException e) {
+            throw new IllegalArgumentException("Error while reading graph: " + getXml(), e);
+        }
+    }
 
     public static void main(String[] args) {
         ProcessFilesGPT processor = new ProcessFilesGPT();
@@ -80,19 +94,8 @@ public class ProcessFilesGPT implements Serializable {
         JavaSparkContext sparkContext = JavaSparkContext.fromSparkContext(SparkContext.getOrCreate());
         sparkContext.setLogLevel("WARN");
 
-        System.out.println("This SNAP workflow file will be applied: " + xml);
+        System.out.println("This SNAP workflow file will be applied: " + getXml());
         System.out.println("Output directory: " + outputLocation);
-
-        try (FileReader f = new FileReader(xml)){
-            this.graph = GraphIO.read(f, new HashMap<>());
-
-        } catch (FileNotFoundException e) {
-            throw new IllegalArgumentException("Could not find graph file: " + xml);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Error while reading graph: " + xml, e);
-        } catch (GraphException e) {
-            throw new IllegalArgumentException("Error while reading graph: " + xml, e);
-        }
 
         ProcessLog pidLogger = null;
         List<String> resultFiles = new ArrayList<String>();
@@ -136,10 +139,7 @@ public class ProcessFilesGPT implements Serializable {
                 pidLogger.procStopped(0);
             }else{
                 System.out.println("This Spark job will process the following files: " + files);
-                resultFiles.addAll(sparkContext.parallelize(files, files.size()).map(file -> {
-                    File inputFile = new File(file);
-                    return processFile(inputFile, inputFile.getName(), false);
-                }).collect());
+                resultFiles.addAll(sparkContext.parallelize(files, files.size()).map(this::processFile).collect());
             }
             List<String> failed = resultFiles.stream().filter(filename -> filename.endsWith("FAILED")).collect(Collectors.toList());
             if (!failed.isEmpty()) {
@@ -168,6 +168,11 @@ public class ProcessFilesGPT implements Serializable {
             throw new IllegalArgumentException("STAC input file does not exist: " + inputConfigFile ,e);
 
         }
+    }
+
+    private String processFile(String inputFile) throws IOException, GraphException, InterruptedException {
+        File input = new File(inputFile);
+        return this.processFile(input, input.getName(), false);
     }
 
     private String processFile(File inputFile,final String outputName, boolean enablePidLogging) throws IOException, GraphException, InterruptedException {
@@ -225,10 +230,10 @@ public class ProcessFilesGPT implements Serializable {
             System.err.println("SNAP Cache Dir: " + SystemUtils.getCacheDir());
             SystemUtils.LOG.info("SNAP Cache Dir: " + SystemUtils.getCacheDir());
             System.err.println("Processing file: " + inputFile.getName());
-            System.err.println("Processing workflow: " + xml);
+            System.err.println("Processing workflow: " + getXml());
             System.err.println("Output location: " + outputLocation);
             if (enablePidLogging) {
-                pidLogger.addTrace("Processing workflow: " + xml);
+                pidLogger.addTrace("Processing workflow: " + getXml());
                 pidLogger.addTrace("Output location: " + outputLocation);
             }
             if (postProcessor != null) {
@@ -249,7 +254,7 @@ public class ProcessFilesGPT implements Serializable {
                 outputFile = tempDir.resolve(outputName).toFile();
             }
             setIO(inputFile, outputFile, formatName);
-            new GraphProcessor().executeGraph(this.graph, new PrintWriterProgressMonitor(System.out){
+            new GraphProcessor().executeGraph(this.getGraph(), new PrintWriterProgressMonitor(System.out){
                 @Override
                 protected void printStartMessage(PrintWriter pw) {
                     super.printStartMessage(pw);
@@ -340,7 +345,7 @@ public class ProcessFilesGPT implements Serializable {
 
     private void setIO(File srcFile, File tgtFile, String format) {
         String readOperatorAlias = OperatorSpi.getOperatorAlias(ReadOp.class);
-        Node readerNode = findNode(this.graph, readOperatorAlias);
+        Node readerNode = findNode(this.getGraph(), readOperatorAlias);
         if (readerNode != null) {
             DomElement param = new DefaultDomElement("parameters");
             param.createChild("file").setValue(srcFile.getAbsolutePath());
@@ -348,7 +353,7 @@ public class ProcessFilesGPT implements Serializable {
         }
 
         String writeOperatorAlias = OperatorSpi.getOperatorAlias(WriteOp.class);
-        Node writerNode = findNode(this.graph, writeOperatorAlias);
+        Node writerNode = findNode(this.getGraph(), writeOperatorAlias);
         if (writerNode != null && tgtFile != null) {
             DomElement origParam = writerNode.getConfiguration();
             ((DomElement)origParam.getChild("file")).setValue(tgtFile.getAbsolutePath());
@@ -373,6 +378,22 @@ public class ProcessFilesGPT implements Serializable {
         }
 
         return null;
+    }
+
+    public String getXml() {
+        return xml;
+    }
+
+    public void setXml(String xml) {
+        this.xml = xml;
+        this.graph = loadGraph();
+    }
+
+    protected Graph getGraph() {
+        if (graph == null) {
+            this.graph = this.loadGraph();
+        }
+        return graph;
     }
 
     private static class IOThreadHandler extends Thread {
