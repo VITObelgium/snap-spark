@@ -1,0 +1,23 @@
+[ {
+  "id" : "S1A_IW_GRDH_SIGMA0_DV_20180930T054051_ASCENDING_59_3299_V001",
+  "inputs" : {
+    "source_1": {
+      "id" : "d706d6a1-6f90-4ab8-9e69-3e6a2fc01819",
+      "assets" : {
+        "vito_filename" : {
+          "href" : "/data/MTDA/CGS_S2/CGS_S2_FAPAR/2018/06/18/S2A_20180618T101021Z_32TPP_CGS_V102_000/S2A_20180618T101021Z_32TPP_FAPAR_V102/10M/S2A_20180618T101021Z_32TPP_FAPAR_10M_V102.tif",
+          "name" : "Product data band 1"
+        }
+      }
+    },
+    "source_2": {
+      "id" : "d706d6a1-6f90-4ab8-9e69-3e6a2fc01820",
+      "assets" : {
+        "vito_filename" : {
+          "href" : "/data/MTDA/CGS_S2/CGS_S2_FAPAR/2018/06/18/S2A_20180618T101021Z_32TPQ_CGS_V102_000/S2A_20180618T101021Z_32TPQ_FAPAR_V102/10M/S2A_20180618T101021Z_32TPQ_FAPAR_10M_V102.tif",
+          "name" : "Product data band 2"
+        }
+      }
+    }
+  }
+} ]

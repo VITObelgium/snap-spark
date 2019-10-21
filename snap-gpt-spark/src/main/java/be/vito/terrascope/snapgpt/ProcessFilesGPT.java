@@ -1,5 +1,16 @@
 package be.vito.terrascope.snapgpt;
 
+import java.io.*;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
+import java.util.logging.*;
+import javax.media.jai.JAI;
+import javax.media.jai.TileCache;
+
 import be.vito.pidclient.LoggingFactory;
 import be.vito.pidclient.ProcessLog;
 import com.bc.ceres.binding.dom.DefaultDomElement;
@@ -21,17 +32,9 @@ import org.esa.snap.core.gpf.graph.*;
 import org.esa.snap.core.util.SystemUtils;
 import org.esa.snap.engine_utilities.gpf.ProcessTimeMonitor;
 
-import javax.media.jai.JAI;
-import javax.media.jai.TileCache;
-import java.io.*;
-import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.*;
-import java.util.logging.*;
-import java.util.stream.Collectors;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 
 /**
@@ -114,26 +117,29 @@ public class ProcessFilesGPT implements Serializable {
                     if (product.inputs.isEmpty()) {
                         throw new IllegalArgumentException("No input products found in the metadata. These should be defined by the 'inputs' property.");
                     }
-                    if (product.inputs.size() != 1) {
-                        throw new IllegalArgumentException("More than one input product found, this processor currently only supports one input per output.");
+
+                    List<File> inputFiles = new ArrayList<>();
+                    for (STACProduct sourceProduct : product.inputs.values()) {
+                        if (sourceProduct == null) {
+                            throw new IllegalArgumentException("No source product found in the input metadata. ");
+                        }
+                        Map<String, String> vitoFilenameAsset = sourceProduct.assets.get("vito_filename");
+                        if (vitoFilenameAsset == null) {
+                            throw new IllegalArgumentException("The source product did not specify a local 'vito_filename'. Product ID: " + sourceProduct.id);
+                        }
+                        String href = vitoFilenameAsset.get("href");
+                        if (href == null) {
+                            throw new IllegalArgumentException("The vito_filename asset does not contain a href property.");
+                        }
+                        File inputFile = new File(href);
+
+                        inputFiles.add(inputFile);
                     }
-                    STACProduct sourceProduct = product.inputs.values().iterator().next();
-                    if (sourceProduct == null) {
-                        throw new IllegalArgumentException("No source product found in the input metadata. ");
-                    }
-                    Map<String, String> vitoFilenameAsset = sourceProduct.assets.get("vito_filename");
-                    if (vitoFilenameAsset == null) {
-                        throw new IllegalArgumentException("The source product did not specify a local 'vito_filename'. Product ID: " + sourceProduct.id);
-                    }
-                    String href = vitoFilenameAsset.get("href");
-                    if (href == null) {
-                        throw new IllegalArgumentException("The vito_filename asset does not contain a href property.");
-                    }
-                    File inputFile = new File(href);
+
                     Gson gson = new Gson();
                     String jsonString = gson.toJson(product);
                     Files.write(Paths.get(outputLocation, product.id + ".json"), jsonString.getBytes());
-                    return processFile(inputFile, product.id, true);
+                    return processFile(inputFiles, product.id, true);
                 }).collect());
 
                 pidLogger.procStopped(0);
@@ -141,7 +147,7 @@ public class ProcessFilesGPT implements Serializable {
                 System.out.println("This Spark job will process the following files: " + files);
                 resultFiles.addAll(sparkContext.parallelize(files, files.size()).map(this::processFile).collect());
             }
-            List<String> failed = resultFiles.stream().filter(filename -> filename.endsWith("FAILED")).collect(Collectors.toList());
+            List<String> failed = resultFiles.stream().filter(filename -> filename.endsWith("FAILED")).collect(toList());
             if (!failed.isEmpty()) {
                 throw new RuntimeException("Processing failed for these files:\n" + String.join("\n", failed));
             }
@@ -172,10 +178,10 @@ public class ProcessFilesGPT implements Serializable {
 
     private String processFile(String inputFile) throws IOException, GraphException, InterruptedException {
         File input = new File(inputFile);
-        return this.processFile(input, input.getName(), false);
+        return this.processFile(singletonList(input), input.getName(), false);
     }
 
-    private String processFile(File inputFile,final String outputName, boolean enablePidLogging) throws IOException, GraphException, InterruptedException {
+    private String processFile(List<File> inputFiles, final String outputName, boolean enablePidLogging) throws IOException, GraphException, InterruptedException {
         Path failedFile = Paths.get(outputLocation, outputName + ".FAILED");
         if (Files.exists(failedFile)) {
             Path failedAttemptFile = null;
@@ -189,9 +195,11 @@ public class ProcessFilesGPT implements Serializable {
             Files.move(failedFile, failedAttemptFile,StandardCopyOption.REPLACE_EXISTING);
         }
         ProcessLog pidLogger = null;
-        if(enablePidLogging){
+        if (enablePidLogging) {
             pidLogger = LoggingFactory.logger(outputName, "CGS_S1_GRD_SIGMA0_L1", null);
-            pidLogger.addFile(inputFile.getAbsolutePath(), "input");
+            for (File f : inputFiles) {
+                pidLogger.addFile(f.getAbsolutePath(), "input");
+            }
             pidLogger.procStarted();
         }
 
@@ -229,7 +237,7 @@ public class ProcessFilesGPT implements Serializable {
             System.err.println("SNAP Auxiliary Data Dir: " + SystemUtils.getAuxDataPath());
             System.err.println("SNAP Cache Dir: " + SystemUtils.getCacheDir());
             SystemUtils.LOG.info("SNAP Cache Dir: " + SystemUtils.getCacheDir());
-            System.err.println("Processing file: " + inputFile.getName());
+            System.err.println("Processing files: " + inputFiles.stream().map(File::getName).collect(joining(", ")));
             System.err.println("Processing workflow: " + getXml());
             System.err.println("Output location: " + outputLocation);
             if (enablePidLogging) {
@@ -253,7 +261,7 @@ public class ProcessFilesGPT implements Serializable {
                 Path tempDir = Files.createTempDirectory(Paths.get(".").toAbsolutePath(), "snapoutput");
                 outputFile = tempDir.resolve(outputName).toFile();
             }
-            setIO(inputFile, outputFile, formatName);
+            setIO(inputFiles, outputFile, formatName);
             new GraphProcessor().executeGraph(this.getGraph(), new PrintWriterProgressMonitor(System.out){
                 @Override
                 protected void printStartMessage(PrintWriter pw) {
@@ -343,12 +351,12 @@ public class ProcessFilesGPT implements Serializable {
         }
     }
 
-    private void setIO(File srcFile, File tgtFile, String format) {
+    private void setIO(List<File> srcFiles, File tgtFile, String format) {
         String readOperatorAlias = OperatorSpi.getOperatorAlias(ReadOp.class);
         Node readerNode = findNode(this.getGraph(), readOperatorAlias);
         if (readerNode != null) {
             DomElement param = new DefaultDomElement("parameters");
-            param.createChild("file").setValue(srcFile.getAbsolutePath());
+            srcFiles.forEach(f -> param.createChild("file").setValue(f.getAbsolutePath()));
             readerNode.setConfiguration(param);
         }
 
@@ -356,9 +364,9 @@ public class ProcessFilesGPT implements Serializable {
         Node writerNode = findNode(this.getGraph(), writeOperatorAlias);
         if (writerNode != null && tgtFile != null) {
             DomElement origParam = writerNode.getConfiguration();
-            ((DomElement)origParam.getChild("file")).setValue(tgtFile.getAbsolutePath());
+            origParam.getChild("file").setValue(tgtFile.getAbsolutePath());
             if (format != null) {
-                ((DomElement)origParam.getChild("formatName")).setValue(format);
+                origParam.getChild("formatName").setValue(format);
             }
         }
 
@@ -367,11 +375,7 @@ public class ProcessFilesGPT implements Serializable {
 
 
     private static Node findNode(Graph graph, String alias) {
-        Node[] var2 = graph.getNodes();
-        int var3 = var2.length;
-
-        for(int var4 = 0; var4 < var3; ++var4) {
-            Node n = var2[var4];
+        for (Node n : graph.getNodes()) {
             if (n.getOperatorName().equals(alias)) {
                 return n;
             }

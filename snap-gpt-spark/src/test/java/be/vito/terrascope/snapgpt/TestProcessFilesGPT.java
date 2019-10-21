@@ -1,17 +1,17 @@
 package be.vito.terrascope.snapgpt;
 
-import com.google.gson.Gson;
-import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+
+import com.google.gson.Gson;
+import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
+import org.junit.Assert;
+import org.junit.Test;
 
 import static org.junit.Assert.*;
 
@@ -31,6 +31,16 @@ public class TestProcessFilesGPT {
         Path tempDirWithPrefix = Files.createTempDirectory("snapsparktest");
         String gptXML = getAbsolutePath("simple_test.xml");
         String jsonConfig = getAbsolutePath("minimal_input.json");
+        setupSpark();
+        ProcessFilesGPT.main(new String[]{"-gpt", gptXML,"-output-dir",tempDirWithPrefix.toString(),"-stac-input",jsonConfig});
+        assertTrue(Files.exists(tempDirWithPrefix.resolve("S1A_IW_GRDH_SIGMA0_DV_20180930T054051_ASCENDING_59_3299_V001.tif")));
+    }
+
+    @Test
+    public void testSimpleGraphMultipleInputs() throws URISyntaxException, IOException {
+        Path tempDirWithPrefix = Files.createTempDirectory("snapsparktest");
+        String gptXML = getAbsolutePath("simple_test.xml");
+        String jsonConfig = getAbsolutePath("multiple_inputs.json");
         setupSpark();
         ProcessFilesGPT.main(new String[]{"-gpt", gptXML,"-output-dir",tempDirWithPrefix.toString(),"-stac-input",jsonConfig});
         assertTrue(Files.exists(tempDirWithPrefix.resolve("S1A_IW_GRDH_SIGMA0_DV_20180930T054051_ASCENDING_59_3299_V001.tif")));
