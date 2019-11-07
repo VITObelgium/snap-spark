@@ -39,11 +39,11 @@ public class TestProcessFilesGPT {
     @Test
     public void testSimpleGraphMultipleInputs() throws URISyntaxException, IOException {
         Path tempDirWithPrefix = Files.createTempDirectory("snapsparktest");
-        String gptXML = getAbsolutePath("simple_test.xml");
+        String gptXML = getAbsolutePath("multiple_input_test.xml");
         String jsonConfig = getAbsolutePath("multiple_inputs.json");
         setupSpark();
         ProcessFilesGPT.main(new String[]{"-gpt", gptXML,"-output-dir",tempDirWithPrefix.toString(),"-stac-input",jsonConfig});
-        assertTrue(Files.exists(tempDirWithPrefix.resolve("S1A_IW_GRDH_SIGMA0_DV_20180930T054051_ASCENDING_59_3299_V001.tif")));
+        assertTrue(Files.exists(tempDirWithPrefix.resolve("S1A_IW_GRDH_SIGMA0_DV_20180930T054051_ASCENDING_59_3299_V001.dim")));
     }
 
     @Test

@@ -353,10 +353,12 @@ public class ProcessFilesGPT implements Serializable {
 
     private void setIO(List<File> srcFiles, File tgtFile, String format) {
         String readOperatorAlias = OperatorSpi.getOperatorAlias(ReadOp.class);
-        Node readerNode = findNode(this.getGraph(), readOperatorAlias);
-        if (readerNode != null) {
-            DomElement param = new DefaultDomElement("parameters");
-            srcFiles.forEach(f -> param.createChild("file").setValue(f.getAbsolutePath()));
+        List<Node> readerNodes = findNodes(this.getGraph(), readOperatorAlias);
+        // set file parameter for as many Read nodes we have a source file
+        for (int i = 0; i < Math.min(srcFiles.size(),  readerNodes.size()); i++) {
+        	Node readerNode = readerNodes.get(i);
+        	DomElement param = new DefaultDomElement("parameters");
+        	param.createChild("file").setValue(srcFiles.get(i).getAbsolutePath());
             readerNode.setConfiguration(param);
         }
 
@@ -372,7 +374,15 @@ public class ProcessFilesGPT implements Serializable {
 
     }
 
-
+    private static List<Node> findNodes(Graph graph, String alias) {
+    	List<Node> nodes = new ArrayList<>();
+    	for (Node n : graph.getNodes()) {
+    		if (n.getOperatorName().equals(alias)) {
+    			nodes.add(n);
+    		}
+    	}
+    	return nodes;
+    }
 
     private static Node findNode(Graph graph, String alias) {
         for (Node n : graph.getNodes()) {

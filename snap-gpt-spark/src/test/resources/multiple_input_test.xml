@@ -1,0 +1,42 @@
+<graph id="Graph">
+	<version>1.0</version>
+	<node id="Read">
+		<operator>Read</operator>
+		<sources />
+		<parameters class="com.bc.ceres.binding.dom.XppDomElement">
+			<file>$infile_master</file>
+		</parameters>
+	</node>
+	<node id="Read(2)">
+		<operator>Read</operator>
+		<sources />
+		<parameters class="com.bc.ceres.binding.dom.XppDomElement">
+			<file>$infile_slave</file>
+		</parameters>
+	</node>
+	<node id="Collocate">
+		<operator>Collocate</operator>
+		<sources>
+			<sourceProduct refid="Read" />
+			<sourceProduct.1 refid="Read(2)" />
+		</sources>
+		<parameters>
+			<targetProductType>COLLOCATED</targetProductType>
+			<renameMasterComponents>true</renameMasterComponents>
+			<renameSlaveComponents>true</renameSlaveComponents>
+			<masterComponentPattern>${ORIGINAL_NAME}_M</masterComponentPattern>
+			<slaveComponentPattern>${ORIGINAL_NAME}_S</slaveComponentPattern>
+			<resamplingType>NEAREST_NEIGHBOUR</resamplingType>
+		</parameters>
+	</node>
+	<node id="Write">
+		<operator>Write</operator>
+		<sources>
+			<sourceProduct refid="Collocate" />
+		</sources>
+		<parameters class="com.bc.ceres.binding.dom.XppDomElement">
+			<file>/tmp/target_Collocated.dim</file>
+			<formatName>BEAM-DIMAP</formatName>
+		</parameters>
+	</node>
+</graph>
