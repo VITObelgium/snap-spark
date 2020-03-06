@@ -24,7 +24,7 @@
         <dependency>
             <groupId>be.vito.eodata</groupId>
             <artifactId>snap-bundle</artifactId>
-            <version>7.0.0</version>
+            <version>${snap.version}</version>
             <type>pom</type>
             <scope>provided</scope>
         </dependency>
