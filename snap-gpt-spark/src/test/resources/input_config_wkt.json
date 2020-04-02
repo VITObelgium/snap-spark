@@ -1,0 +1,86 @@
+[ {
+  "id" : "S1A_IW_GRDH_SIGMA0_DV_20180930T054051_ASCENDING_59_3299_V001",
+  "title" : "S1A_IW_GRDH_SIGMA0_DV_20180930T054051_ASCENDING_59_3299_V001",
+  "inputs" : {
+    "source_GRD": {
+      "summary" : "Date: 2018-09-30T17:40:51.672Z, Instrument: SAR-C SAR, Mode: VV VH, Satellite: Sentinel-1, Size: 1.61 GB",
+      "links" : [ {
+        "href" : "https://scihub.copernicus.eu/apihub/odata/v1/Products('d706d6a1-6f90-4ab8-9e69-3e6a2fc01819')/$value"
+      }, {
+        "rel" : "alternative",
+        "href" : "https://scihub.copernicus.eu/apihub/odata/v1/Products('d706d6a1-6f90-4ab8-9e69-3e6a2fc01819')/"
+      }, {
+        "rel" : "icon",
+        "href" : "https://scihub.copernicus.eu/apihub/odata/v1/Products('d706d6a1-6f90-4ab8-9e69-3e6a2fc01819')/Products('Quicklook')/$value"
+      } ],
+      "geometry" : "MULTIPOLYGON (((4.978289 49.452801, 5.493715 51.072254, 1.817533 51.477936, 1.428543 49.856216, 4.978289 49.452801)))",
+      "id" : "d706d6a1-6f90-4ab8-9e69-3e6a2fc01819",
+      "title" : "S1A_IW_GRDH_1SDV_20180930T174051_20180930T174116_023931_029CE8_3299",
+      "properties" : {
+        "orbitnumber" : 23931,
+        "productclass" : "S",
+        "lastrelativeorbitnumber" : 59,
+        "orbitdirection" : "ASCENDING",
+        "uuid" : "d706d6a1-6f90-4ab8-9e69-3e6a2fc01819",
+        "beginposition" : "2018-09-30T17:40:51.672Z",
+        "producttype" : "GRD",
+        "polarisationmode" : "VV VH",
+        "endposition" : "2018-09-30T17:41:16.67Z",
+        "relativeorbitnumber" : 59,
+        "slicenumber" : "10",
+        "gmlfootprint" : "<gml:Polygon srsName=\"http://www.opengis.net/gml/srs/epsg.xml#4326\" xmlns:gml=\"http://www.opengis.net/gml\">\n   <gml:outerBoundaryIs>\n      <gml:LinearRing>\n         <gml:coordinates>50.520245,0.145066 50.922108,3.746976 49.426273,4.109257 49.026085,0.616874 50.520245,0.145066</gml:coordinates>\n      </gml:LinearRing>\n   </gml:outerBoundaryIs>\n</gml:Polygon>",
+        "missiondatatakeid" : "171240",
+        "processing_status" : {
+          "status" : "DONE",
+          "processing_end" : "2018-09-30T21:05:17.252Z"
+        },
+        "download_date" : "2018-09-30T21:04:34.991Z",
+        "instrumentname" : "Synthetic Aperture Radar (C-band)",
+        "identifier" : "S1A_IW_GRDH_1SDV_20180930T174051_20180930T174116_023931_029CE8_3299",
+        "instrumentshortname" : "SAR-C SAR",
+        "sensoroperationalmode" : "IW",
+        "swathidentifier" : "IW",
+        "format" : "SAFE",
+        "platformname" : "Sentinel-1",
+        "lastorbitnumber" : 23931,
+        "filename" : "S1A_IW_GRDH_1SDV_20180930T174051_20180930T174116_023931_029CE8_3299.SAFE",
+        "footprint" : "POLYGON ((0.145066 50.520245,3.746976 50.922108,4.109257 49.426273,0.616874 49.026085,0.145066 50.520245))",
+        "size" : "1.61 GB",
+        "timeliness" : "Fast-24h",
+        "acquisitiontype" : "NOMINAL",
+        "ingestiondate" : "2018-09-30T20:53:24.33Z",
+        "platformidentifier" : "2014-016A",
+        "status" : "ARCHIVED"
+      },
+      "assets" : {
+        "vito_filename" : {
+          "href" : "/data/MTDA/CGS_S1/CGS_S1_GRD_L1/IW/HR/DV/2018/10/01/S1B_IW_GRDH_1SDV_20181001T173129_20181001T173154_012962_017F0C_5127/S1B_IW_GRDH_1SDV_20181001T173129_20181001T173154_012962_017F0C_5127.zip",
+          "name" : "Product data band"
+        }
+      }
+    }
+  },
+  "geometry": "MULTIPOLYGON (((4.978289 49.452801, 5.493715 51.072254, 1.817533 51.477936, 1.428543 49.856216, 4.978289 49.452801)))",
+  "properties" : {
+    "beginposition" : "2018-09-30T17:40:51.672Z",
+    "endposition" : "2018-09-30T17:41:16.67Z",
+    "identifier" : "S1A_IW_GRDH_SIGMA0_DV_20180930T054051_ASCENDING_59_3299_V001",
+    "processing_status" : {
+      "status" : "EXPECTED"
+    },
+    "source_product" : "S1A_IW_GRDH_1SDV_20180930T174051_20180930T174116_023931_029CE8_3299",
+    "platformname" : "Sentinel-1",
+    "producttype" : "CGS_S1_GRD_SIGMA0_L1",
+    "footprint" : "POLYGON ((0.145066 50.520245,3.746976 50.922108,4.109257 49.426273,0.616874 49.026085,0.145066 50.520245))",
+    "gmlfootprint" : "<gml:Polygon srsName=\"http://www.opengis.net/gml/srs/epsg.xml#4326\" xmlns:gml=\"http://www.opengis.net/gml\">\n   <gml:outerBoundaryIs>\n      <gml:LinearRing>\n         <gml:coordinates>50.520245,0.145066 50.922108,3.746976 49.426273,4.109257 49.026085,0.616874 50.520245,0.145066</gml:coordinates>\n      </gml:LinearRing>\n   </gml:outerBoundaryIs>\n</gml:Polygon>",
+    "orbitdirection" : "ASCENDING",
+    "orbitnumber" : "23931",
+    "relativeorbitnumber" : "59",
+    "slicenumber" : "10",
+    "swathidentifier" : "IW",
+    "polarisationmode" : "VV VH",
+    "productclass" : "S",
+    "sensoroperationalmode" : "IW",
+    "format" : "SAFE"
+  }
+} ]

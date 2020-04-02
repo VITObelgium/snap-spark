@@ -7,7 +7,7 @@ public class STACProduct implements Serializable {
 
     String id;
     Map<String,Object> properties;
-    Map<String,Object> geometry;
+    Object geometry;
     Map<String, STACProduct> inputs;
     Map<String, Map<String,String>> assets;
 }

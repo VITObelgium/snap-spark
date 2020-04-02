@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 
 import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
@@ -108,10 +109,17 @@ public class TestProcessFilesGPT {
     public void testConfigFileParsing() throws URISyntaxException {
         List<STACProduct> result = ProcessFilesGPT.parseSTACInputFile(getAbsolutePath("input_config.json"));
         STACProduct product = result.get(0);
+        assertDecodedProduct(product);
+
+        assertEquals("MultiPolygon",((Map<String,Object>)product.geometry).get("type"));
+
+    }
+
+    private void assertDecodedProduct(STACProduct product) {
         assertNotNull(product);
         assertNotNull(product.id);
         assertNotNull(product.geometry);
-        assertEquals("MultiPolygon",product.geometry.get("type"));
+
         STACProduct source_grd = product.inputs.get("source_GRD");
         assertNotNull(source_grd);
         assertNotNull(source_grd.assets.get("vito_filename"));
@@ -119,6 +127,14 @@ public class TestProcessFilesGPT {
         Gson gson = new Gson();
         String jsonString = gson.toJson(product);
         System.out.println("jsonString = " + jsonString);
+    }
+
+    @Test
+    public void testConfigFileParsingWKT() throws URISyntaxException {
+        List<STACProduct> result = ProcessFilesGPT.parseSTACInputFile(getAbsolutePath("input_config_wkt.json"));
+        STACProduct product = result.get(0);
+        assertDecodedProduct(product);
+        assertTrue(product.geometry instanceof String);
 
     }
 
