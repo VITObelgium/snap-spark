@@ -1,16 +1,5 @@
 package be.vito.terrascope.snapgpt;
 
-import java.io.*;
-import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.*;
-import java.util.logging.*;
-import javax.media.jai.JAI;
-import javax.media.jai.TileCache;
-
 import be.vito.pidclient.LoggingFactory;
 import be.vito.pidclient.ProcessLog;
 import com.bc.ceres.binding.dom.DefaultDomElement;
@@ -18,7 +7,8 @@ import com.bc.ceres.binding.dom.DomElement;
 import com.bc.ceres.core.PrintWriterProgressMonitor;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.google.gson.Gson;
+import com.google.gson.*;
+import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import org.apache.commons.io.IOUtils;
@@ -32,6 +22,17 @@ import org.esa.snap.core.gpf.graph.*;
 import org.esa.snap.core.util.SystemUtils;
 import org.esa.snap.engine_utilities.gpf.ProcessTimeMonitor;
 
+import javax.media.jai.JAI;
+import javax.media.jai.TileCache;
+import java.io.*;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
+import java.util.logging.*;
+
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -43,7 +44,7 @@ import static java.util.stream.Collectors.toList;
 public class ProcessFilesGPT implements Serializable {
 
 
-    @Parameter(description = "List of input files to process. Input files will be processed in parallel.",required = false)
+    @Parameter(description = "List of input files to process. Input files will be processed in parallel.", required = false)
     private List<String> files = new ArrayList<>();
 
     @Parameter(names = {"-stac-input"}, description = "Json file specifying the files to process, as an array of STAC metadata.", required = false)
@@ -70,8 +71,8 @@ public class ProcessFilesGPT implements Serializable {
 
     private transient Graph graph;
 
-    private Graph loadGraph(){
-        try (FileReader f = new FileReader(getXml())){
+    private Graph loadGraph() {
+        try (FileReader f = new FileReader(getXml())) {
             return GraphIO.read(f, new HashMap<>());
 
         } catch (FileNotFoundException e) {
@@ -103,7 +104,7 @@ public class ProcessFilesGPT implements Serializable {
         ProcessLog pidLogger = null;
         List<String> resultFiles = new ArrayList<String>();
 
-        try{
+        try {
             if (files.isEmpty()) {
 
                 pidLogger = LoggingFactory.logger(null, "CGS_S1_GRD_SIGMA0_L1", null, sparkContext.sc());
@@ -113,7 +114,7 @@ public class ProcessFilesGPT implements Serializable {
                     throw new IllegalArgumentException("Either specify a list of files to process, or specify the '-stac-input' parameter.");
                 }
                 List<STACProduct> stacProducts = parseSTACInputFile(inputConfigFile);
-                resultFiles.addAll( sparkContext.parallelize(stacProducts,stacProducts.size()).map( product -> {
+                resultFiles.addAll(sparkContext.parallelize(stacProducts, stacProducts.size()).map(product -> {
                     if (product.inputs.isEmpty()) {
                         throw new IllegalArgumentException("No input products found in the metadata. These should be defined by the 'inputs' property.");
                     }
@@ -143,7 +144,7 @@ public class ProcessFilesGPT implements Serializable {
                 }).collect());
 
                 pidLogger.procStopped(0);
-            }else{
+            } else {
                 System.out.println("This Spark job will process the following files: " + files);
                 resultFiles.addAll(sparkContext.parallelize(files, files.size()).map(this::processFile).collect());
             }
@@ -151,9 +152,8 @@ public class ProcessFilesGPT implements Serializable {
             if (!failed.isEmpty()) {
                 throw new RuntimeException("Processing failed for these files:\n" + String.join("\n", failed));
             }
-        }
-        catch(Exception ex){
-            if(pidLogger != null){
+        } catch (Exception ex) {
+            if (pidLogger != null) {
                 pidLogger.procStopped(1, ex.getMessage());
             }
             throw ex;
@@ -164,14 +164,57 @@ public class ProcessFilesGPT implements Serializable {
     static List<STACProduct> parseSTACInputFile(String inputConfigFile) {
         Path inputPath = Paths.get(inputConfigFile);
 
-        Gson gson = new Gson();
+        // make sure that integers are parsed as integers, and not as the default Double
+        Gson gson = new GsonBuilder().registerTypeAdapter(new TypeToken<Map<String, Object>>() {}.getType(), new JsonDeserializer<Map<String, Object>>() {
+            @Override
+            public Map<String, Object> deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+                return (Map<String, Object>) read(jsonElement);
+            }
+
+            public Object read(JsonElement in) {
+                if (in.isJsonArray()) {
+                    List<Object> list = new ArrayList<Object>();
+                    JsonArray arr = in.getAsJsonArray();
+                    for (JsonElement anArr : arr) {
+                        list.add(read(anArr));
+                    }
+                    return list;
+                } else if (in.isJsonObject()) {
+                    Map<String, Object> map = new LinkedTreeMap<String, Object>();
+                    JsonObject obj = in.getAsJsonObject();
+                    Set<Map.Entry<String, JsonElement>> entitySet = obj.entrySet();
+                    for (Map.Entry<String, JsonElement> entry : entitySet) {
+                        map.put(entry.getKey(), read(entry.getValue()));
+                    }
+                    return map;
+                } else if (in.isJsonPrimitive()) {
+                    JsonPrimitive prim = in.getAsJsonPrimitive();
+                    if (prim.isBoolean()) {
+                        return prim.getAsBoolean();
+                    } else if (prim.isString()) {
+                        return prim.getAsString();
+                    } else if (prim.isNumber()) {
+                        Number num = prim.getAsNumber();
+                        // check if this number should be parsed as an Integer or Double
+                        if (!prim.getAsString().contains(".")) {
+                            return num.longValue();
+                        } else {
+                            return num.doubleValue();
+                        }
+                    }
+                }
+                return null;
+            }
+        }).create();
         try {
             JsonReader reader = new JsonReader(new FileReader(inputPath.toFile()));
-            Type type = new TypeToken<List<STACProduct>>(){}.getType();
+            Type type = new TypeToken<List<STACProduct>>() {
+            }.getType();
             List<STACProduct> myMap = gson.fromJson(reader, type);
             return myMap;
-        } catch (FileNotFoundException e) {
-            throw new IllegalArgumentException("STAC input file does not exist: " + inputConfigFile ,e);
+        } catch (
+                FileNotFoundException e) {
+            throw new IllegalArgumentException("STAC input file does not exist: " + inputConfigFile, e);
 
         }
     }
@@ -187,12 +230,12 @@ public class ProcessFilesGPT implements Serializable {
             Path failedAttemptFile = null;
             TaskContext taskContext = TaskContext.get();
             if (taskContext != null) {
-                failedAttemptFile = Paths.get(outputLocation, outputName + ".FAILED." + (taskContext.attemptNumber()-1));
-            }else{
+                failedAttemptFile = Paths.get(outputLocation, outputName + ".FAILED." + (taskContext.attemptNumber() - 1));
+            } else {
                 failedAttemptFile = Paths.get(outputLocation, outputName + ".FAILED.previous");
             }
             //yarn launches multiple attempts, so file may already exist
-            Files.move(failedFile, failedAttemptFile,StandardCopyOption.REPLACE_EXISTING);
+            Files.move(failedFile, failedAttemptFile, StandardCopyOption.REPLACE_EXISTING);
         }
         ProcessLog pidLogger = null;
         if (enablePidLogging) {
@@ -209,14 +252,14 @@ public class ProcessFilesGPT implements Serializable {
         }
         Path logFile = Paths.get(outputLocation, outputName + ".log");
         Handler fh = new FileHandler(logFile.toFile().getAbsolutePath());
-        fh.setLevel (Level.ALL);
+        fh.setLevel(Level.ALL);
         fh.setFormatter(new SimpleFormatter());
 
         Logger logger = Logger.getLogger("org.esa");
         logger.setUseParentHandlers(true);
-        logger.addHandler (fh);
+        logger.addHandler(fh);
 
-        logger.setLevel (Level.ALL);
+        logger.setLevel(Level.ALL);
 
 
         try {
@@ -262,7 +305,7 @@ public class ProcessFilesGPT implements Serializable {
                 outputFile = tempDir.resolve(outputName).toFile();
             }
             setIO(inputFiles, outputFile, formatName);
-            new GraphProcessor().executeGraph(this.getGraph(), new PrintWriterProgressMonitor(System.out){
+            new GraphProcessor().executeGraph(this.getGraph(), new PrintWriterProgressMonitor(System.out) {
                 @Override
                 protected void printStartMessage(PrintWriter pw) {
                     super.printStartMessage(pw);
@@ -295,7 +338,7 @@ public class ProcessFilesGPT implements Serializable {
             }
             System.gc();
             SystemUtils.LOG.info(" time: " + ProcessTimeMonitor.formatDuration(duration) + " (" + duration + " s)");
-            SystemUtils.LOG.info( "SNAP processing graph output directory contains these files: " );
+            SystemUtils.LOG.info("SNAP processing graph output directory contains these files: ");
             Path tempOutputDir = outputFile.toPath().getParent();
             Files.list(tempOutputDir)
                     .map(Path::toString)
@@ -306,7 +349,7 @@ public class ProcessFilesGPT implements Serializable {
                     pidLogger.addTrace("Starting postprocessing.");
                     pidLogger.writeLog();
                 }
-                doPostProcess(postProcessor, outputFile.toPath(),logFile,pidLogger);
+                doPostProcess(postProcessor, outputFile.toPath(), logFile, pidLogger);
             }
 
             if (useStagingDirectory) {
@@ -323,27 +366,27 @@ public class ProcessFilesGPT implements Serializable {
             fh.flush();
             fh.close();
             Path doneFile = Paths.get(outputLocation, outputName + ".DONE");
-            Files.move(logFile, doneFile,StandardCopyOption.REPLACE_EXISTING);
-            if(pidLogger != null)
+            Files.move(logFile, doneFile, StandardCopyOption.REPLACE_EXISTING);
+            if (pidLogger != null)
                 pidLogger.procStopped(0);
             return doneFile.toString();
-        }catch(Throwable t){
-            SystemUtils.LOG.log(Level.SEVERE,t.getLocalizedMessage(),t);
+        } catch (Throwable t) {
+            SystemUtils.LOG.log(Level.SEVERE, t.getLocalizedMessage(), t);
             fh.flush();
             fh.close();
-            Files.move(logFile,failedFile,StandardCopyOption.REPLACE_EXISTING);
-            if(pidLogger != null)
+            Files.move(logFile, failedFile, StandardCopyOption.REPLACE_EXISTING);
+            if (pidLogger != null)
                 pidLogger.procStopped(1, t.getMessage());
             TaskContext taskContext = TaskContext.get();
             if (taskContext != null) {
                 if (taskContext.attemptNumber() < 3) {
                     throw t;
                 }
-            }else{
+            } else {
                 throw t;
             }
             return failedFile.toString();
-        }finally {
+        } finally {
             if (Files.exists(startedFile)) {
                 Files.delete(startedFile);
             }
@@ -355,10 +398,10 @@ public class ProcessFilesGPT implements Serializable {
         String readOperatorAlias = OperatorSpi.getOperatorAlias(ReadOp.class);
         List<Node> readerNodes = findNodes(this.getGraph(), readOperatorAlias);
         // set file parameter for as many Read nodes we have a source file
-        for (int i = 0; i < Math.min(srcFiles.size(),  readerNodes.size()); i++) {
-        	Node readerNode = readerNodes.get(i);
-        	DomElement param = new DefaultDomElement("parameters");
-        	param.createChild("file").setValue(srcFiles.get(i).getAbsolutePath());
+        for (int i = 0; i < Math.min(srcFiles.size(), readerNodes.size()); i++) {
+            Node readerNode = readerNodes.get(i);
+            DomElement param = new DefaultDomElement("parameters");
+            param.createChild("file").setValue(srcFiles.get(i).getAbsolutePath());
             readerNode.setConfiguration(param);
         }
 
@@ -375,13 +418,13 @@ public class ProcessFilesGPT implements Serializable {
     }
 
     private static List<Node> findNodes(Graph graph, String alias) {
-    	List<Node> nodes = new ArrayList<>();
-    	for (Node n : graph.getNodes()) {
-    		if (n.getOperatorName().equals(alias)) {
-    			nodes.add(n);
-    		}
-    	}
-    	return nodes;
+        List<Node> nodes = new ArrayList<>();
+        for (Node n : graph.getNodes()) {
+            if (n.getOperatorName().equals(alias)) {
+                nodes.add(n);
+            }
+        }
+        return nodes;
     }
 
     private static Node findNode(Graph graph, String alias) {
@@ -432,7 +475,7 @@ public class ProcessFilesGPT implements Serializable {
                         pidLogger.writeLog();
                     }
                 }
-            }  finally {
+            } finally {
                 br.close();
             }
         }
@@ -445,10 +488,10 @@ public class ProcessFilesGPT implements Serializable {
         builder.environment().put("PYTHONUNBUFFERED", "1");
 
         SystemUtils.LOG.log(Level.INFO, "Starting post processing: ");
-        SystemUtils.LOG.log(Level.INFO,String.join(" ", builder.command()));
+        SystemUtils.LOG.log(Level.INFO, String.join(" ", builder.command()));
         Process process = builder.start();
 
-        IOThreadHandler outputHandler = new IOThreadHandler(process.getInputStream(),pidLogger);
+        IOThreadHandler outputHandler = new IOThreadHandler(process.getInputStream(), pidLogger);
         outputHandler.start();
 
         process.waitFor();
