@@ -43,7 +43,7 @@
         <dependency>
             <groupId>org.esa.snap</groupId>
             <artifactId>snap-core</artifactId>
-            <version>${snap.version}</version>
+            <version>7.0.3-VITO</version>
         </dependency>
 
         <dependency>
@@ -101,7 +101,7 @@
         <dependency><groupId>org.esa.snap</groupId><artifactId>snap-cluster-analysis</artifactId><version>${snap.version}</version></dependency>
         <dependency><groupId>org.esa.snap</groupId><artifactId>snap-collocation</artifactId><version>${snap.version}</version></dependency>
         <!--<dependency><groupId>org.esa.snap</groupId><artifactId>snap-csv-dataio</artifactId><version>${snap.version}</version></dependency>-->
-        <dependency><groupId>org.esa.snap</groupId><artifactId>snap-dem</artifactId><version>${snap.version}</version>
+        <dependency><groupId>org.esa.snap</groupId><artifactId>snap-dem</artifactId><version>7.0.3-VITO</version>
             <exclusions>
                 <exclusion>
                     <groupId>xerces</groupId>
