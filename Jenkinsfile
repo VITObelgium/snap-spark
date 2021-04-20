@@ -30,7 +30,7 @@ if(deployable_branches.contains(env.BRANCH_NAME)){
         milestone()
     }
 
-    node('jenkinsslave1.vgt.vito.be'){
+    node('devdmz'){
         stage('Releasing'){
             rel_version = getReleaseVersion()
             withMavenEnv(["JAVA_OPTS=-Xmx1536m -Xms512m","HADOOP_CONF_DIR=/etc/hadoop/conf/"]){
