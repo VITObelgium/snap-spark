@@ -98,7 +98,7 @@ public class TestProcessFilesGPT {
     @Test
     public void testPostProcessingNoSpark() throws URISyntaxException, IOException, InterruptedException {
         String postProcessor = getAbsolutePath("postprocess.py");
-        ProcessFilesGPT.doPostProcess(postProcessor, Paths.get(postProcessor),null, null);
+        ProcessFilesGPT.doPostProcess(postProcessor, Paths.get(postProcessor),null);
     }
 
     private String getAbsolutePath(String classPathFile) throws URISyntaxException {
