@@ -1,6 +1,6 @@
 def deployable_branches = ["master"]
 
-node ('jenkinsslave1.vgt.vito.be') {
+node ('devdmz') {
     stage('Build and Test') {
         sh "rm -rf *"
         sh "rm -rf .git/"
