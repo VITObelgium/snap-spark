@@ -63,10 +63,8 @@ if(deployable_branches.contains(env.BRANCH_NAME)){
 }
 
 void deploy(hdfs_dir="/workflows/snap/",rel_version){
-    pidclient_version = getPidClientVersion()
     sh "hdfs dfs -copyFromLocal -f snap-bundle/target/snap-bundle/snap-all-*.jar "+hdfs_dir
     sh "hdfs dfs -copyFromLocal -f snap-gpt-spark/target/snap-gpt-spark-${rel_version}.jar " + hdfs_dir
-    sh "hdfs dfs -copyFromLocal -f /localdata/M2/be/vito/eodata/pidclient/${pidclient_version}/pidclient-${pidclient_version}-jar-with-dependencies.jar "+hdfs_dir
     dir("snap-gpt-spark/etc") {
         sh "zip etc.zip *"
         sh "hdfs dfs -copyFromLocal -f etc.zip " + hdfs_dir
@@ -98,12 +96,6 @@ String getReleaseVersion() {
     v_releasable = v[0] + '.' + v[1] + '.' + v[2] // 1.0.0
     pom.version = v_releasable
     return v_releasable
-}
-
-String getPidClientVersion() {
-    pom = readMavenPom file: 'snap-gpt-spark/pom.xml'
-    version = pom.properties['pidclient.version']
-    return version
 }
 
 String updateMavenVersion(){

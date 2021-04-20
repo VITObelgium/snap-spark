@@ -1,7 +1,5 @@
 package be.vito.terrascope.snapgpt;
 
-import be.vito.pidclient.LoggingFactory;
-import be.vito.pidclient.ProcessLog;
 import com.bc.ceres.binding.dom.DefaultDomElement;
 import com.bc.ceres.binding.dom.DomElement;
 import com.bc.ceres.core.PrintWriterProgressMonitor;
@@ -101,14 +99,10 @@ public class ProcessFilesGPT implements Serializable {
         System.out.println("This SNAP workflow file will be applied: " + getXml());
         System.out.println("Output directory: " + outputLocation);
 
-        ProcessLog pidLogger = null;
         List<String> resultFiles = new ArrayList<String>();
 
         try {
             if (files.isEmpty()) {
-
-                pidLogger = LoggingFactory.logger(null, "CGS_S1_GRD_SIGMA0_L1", null, sparkContext.sc());
-                pidLogger.procStarted();
 
                 if (inputConfigFile == null) {
                     throw new IllegalArgumentException("Either specify a list of files to process, or specify the '-stac-input' parameter.");
@@ -140,10 +134,8 @@ public class ProcessFilesGPT implements Serializable {
                     Gson gson = new Gson();
                     String jsonString = gson.toJson(product);
                     Files.write(Paths.get(outputLocation, product.id + ".json"), jsonString.getBytes());
-                    return processFile(inputFiles, product.id, true);
+                    return processFile(inputFiles, product.id);
                 }).collect());
-
-                pidLogger.procStopped(0);
             } else {
                 System.out.println("This Spark job will process the following files: " + files);
                 resultFiles.addAll(sparkContext.parallelize(files, files.size()).map(this::processFile).collect());
@@ -153,9 +145,6 @@ public class ProcessFilesGPT implements Serializable {
                 throw new RuntimeException("Processing failed for these files:\n" + String.join("\n", failed));
             }
         } catch (Exception ex) {
-            if (pidLogger != null) {
-                pidLogger.procStopped(1, ex.getMessage());
-            }
             throw ex;
         }
 
@@ -221,10 +210,10 @@ public class ProcessFilesGPT implements Serializable {
 
     private String processFile(String inputFile) throws IOException, GraphException, InterruptedException {
         File input = new File(inputFile);
-        return this.processFile(singletonList(input), input.getName(), false);
+        return this.processFile(singletonList(input), input.getName());
     }
 
-    private String processFile(List<File> inputFiles, final String outputName, boolean enablePidLogging) throws IOException, GraphException, InterruptedException {
+    private String processFile(List<File> inputFiles, final String outputName) throws IOException, GraphException, InterruptedException {
         Path failedFile = Paths.get(outputLocation, outputName + ".FAILED");
         if (Files.exists(failedFile)) {
             Path failedAttemptFile = null;
@@ -236,14 +225,6 @@ public class ProcessFilesGPT implements Serializable {
             }
             //yarn launches multiple attempts, so file may already exist
             Files.move(failedFile, failedAttemptFile, StandardCopyOption.REPLACE_EXISTING);
-        }
-        ProcessLog pidLogger = null;
-        if (enablePidLogging) {
-            pidLogger = LoggingFactory.logger(outputName, "CGS_S1_GRD_SIGMA0_L1", null);
-            for (File f : inputFiles) {
-                pidLogger.addFile(f.getAbsolutePath(), "input");
-            }
-            pidLogger.procStarted();
         }
 
         Path startedFile = Paths.get(outputLocation, outputName + ".PROCESSING");
@@ -283,18 +264,9 @@ public class ProcessFilesGPT implements Serializable {
             System.err.println("Processing files: " + inputFiles.stream().map(File::getName).collect(joining(", ")));
             System.err.println("Processing workflow: " + getXml());
             System.err.println("Output location: " + outputLocation);
-            if (enablePidLogging) {
-                pidLogger.addTrace("Processing workflow: " + getXml());
-                pidLogger.addTrace("Output location: " + outputLocation);
-            }
+
             if (postProcessor != null) {
                 SystemUtils.LOG.info("Post processing executable: " + postProcessor);
-                if (enablePidLogging) {
-                    pidLogger.addTrace("Post processing executable: " + postProcessor);
-                }
-            }
-            if (pidLogger != null) {
-                pidLogger.writeLog();
             }
 
 
@@ -345,11 +317,7 @@ public class ProcessFilesGPT implements Serializable {
                     .forEach(SystemUtils.LOG::info);
 
             if (postProcessor != null) {
-                if (enablePidLogging) {
-                    pidLogger.addTrace("Starting postprocessing.");
-                    pidLogger.writeLog();
-                }
-                doPostProcess(postProcessor, outputFile.toPath(), logFile, pidLogger);
+                doPostProcess(postProcessor, outputFile.toPath(), logFile);
             }
 
             if (useStagingDirectory) {
@@ -367,16 +335,12 @@ public class ProcessFilesGPT implements Serializable {
             fh.close();
             Path doneFile = Paths.get(outputLocation, outputName + ".DONE");
             Files.move(logFile, doneFile, StandardCopyOption.REPLACE_EXISTING);
-            if (pidLogger != null)
-                pidLogger.procStopped(0);
             return doneFile.toString();
         } catch (Throwable t) {
             SystemUtils.LOG.log(Level.SEVERE, t.getLocalizedMessage(), t);
             fh.flush();
             fh.close();
             Files.move(logFile, failedFile, StandardCopyOption.REPLACE_EXISTING);
-            if (pidLogger != null)
-                pidLogger.procStopped(1, t.getMessage());
             TaskContext taskContext = TaskContext.get();
             if (taskContext != null) {
                 if (taskContext.attemptNumber() < 3) {
@@ -455,11 +419,9 @@ public class ProcessFilesGPT implements Serializable {
 
     private static class IOThreadHandler extends Thread {
         private InputStream inputStream;
-        private final ProcessLog pidLogger;
 
-        IOThreadHandler(InputStream inputStream, ProcessLog pidLogger) {
+        IOThreadHandler(InputStream inputStream) {
             this.inputStream = inputStream;
-            this.pidLogger = pidLogger;
         }
 
         public void run() {
@@ -470,10 +432,6 @@ public class ProcessFilesGPT implements Serializable {
                 while (br.hasNextLine()) {
                     line = br.nextLine();
                     SystemUtils.LOG.info(line);
-                    if (pidLogger != null) {
-                        pidLogger.addTrace(line);
-                        pidLogger.writeLog();
-                    }
                 }
             } finally {
                 br.close();
@@ -482,7 +440,7 @@ public class ProcessFilesGPT implements Serializable {
 
     }
 
-    static void doPostProcess(String postProcessor, Path outputFile, Path logFile, ProcessLog pidLogger) throws IOException, InterruptedException {
+    static void doPostProcess(String postProcessor, Path outputFile, Path logFile) throws IOException, InterruptedException {
 
         ProcessBuilder builder = new ProcessBuilder().command(postProcessor, outputFile.toString()).directory(outputFile.getParent().toFile());
         builder.environment().put("PYTHONUNBUFFERED", "1");
@@ -491,7 +449,7 @@ public class ProcessFilesGPT implements Serializable {
         SystemUtils.LOG.log(Level.INFO, String.join(" ", builder.command()));
         Process process = builder.start();
 
-        IOThreadHandler outputHandler = new IOThreadHandler(process.getInputStream(), pidLogger);
+        IOThreadHandler outputHandler = new IOThreadHandler(process.getInputStream());
         outputHandler.start();
 
         process.waitFor();
