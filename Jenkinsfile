@@ -1,6 +1,6 @@
 def deployable_branches = ["master"]
 
-node ('devdmz') {
+node ('jenkinsslave3.vgt.vito.be') {
     stage('Build and Test') {
         sh "rm -rf *"
         sh "rm -rf .git/"
@@ -30,7 +30,7 @@ if(deployable_branches.contains(env.BRANCH_NAME)){
         milestone()
     }
 
-    node('devdmz'){
+    node('jenkinsslave3.vgt.vito.be'){
         stage('Releasing'){
             rel_version = getReleaseVersion()
             withMavenEnv(["JAVA_OPTS=-Xmx1536m -Xms512m","HADOOP_CONF_DIR=/etc/hadoop/conf/"]){
