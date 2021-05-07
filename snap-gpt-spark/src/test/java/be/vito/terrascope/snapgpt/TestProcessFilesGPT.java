@@ -91,29 +91,18 @@ public class TestProcessFilesGPT {
     @Test
     public void testPostProcessing() throws URISyntaxException, IOException {
         String gptXML = getAbsolutePath("simple_test.xml");
-        String postProcessor = getAbsolutePath("postprocess.py", true);
+        String postProcessor = getAbsolutePath("triggerPostProcessing.sh");
         setupSpark();
         ProcessFilesGPT.main(new String[]{"-postprocess",postProcessor,"-noTempFile","-gpt", gptXML,"-output-dir","/tmp",testProduct});
     }
 
     @Test
     public void testPostProcessingNoSpark() throws URISyntaxException, IOException, InterruptedException {
-        String postProcessor = getAbsolutePath("postprocess.py", true);
+        String postProcessor = getAbsolutePath("triggerPostProcessing.sh");
         ProcessFilesGPT.doPostProcess(postProcessor, Paths.get(postProcessor),null);
     }
 
     private String getAbsolutePath(String classPathFile) throws URISyntaxException {
-        return this.getAbsolutePath(classPathFile, false);
-    }
-
-    private String getAbsolutePath(String classPathFile, Boolean listFiles) throws URISyntaxException {
-        if (listFiles) {
-            File f = new File(Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI()).toAbsolutePath().toString());
-            String[] pathnames = f.list();
-            for (String pathname : pathnames) {
-                System.out.println(pathname);
-            }
-        }
         return Paths.get(Thread.currentThread().getContextClassLoader().getResource(classPathFile).toURI()).toAbsolutePath().toString();
     }
 

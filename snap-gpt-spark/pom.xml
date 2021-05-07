@@ -53,6 +53,7 @@
                         <configuration>
                             <target>
                                 <chmod file="target/test-classes/postprocess.py" perm="755"/>
+                                <chmod file="target/test-classes/triggerPostProcessing.sh" perm="755"/>
                             </target>
                         </configuration>
                         <goals>
