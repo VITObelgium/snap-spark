@@ -101,7 +101,7 @@
         <dependency><groupId>org.esa.snap</groupId><artifactId>snap-cluster-analysis</artifactId><version>${snap.version}</version></dependency>
         <dependency><groupId>org.esa.snap</groupId><artifactId>snap-collocation</artifactId><version>${snap.version}</version></dependency>
         <!--<dependency><groupId>org.esa.snap</groupId><artifactId>snap-csv-dataio</artifactId><version>${snap.version}</version></dependency>-->
-        <dependency><groupId>org.esa.snap</groupId><artifactId>snap-dem</artifactId><version>7.0.3-VITO</version>
+        <dependency><groupId>org.esa.snap</groupId><artifactId>snap-dem</artifactId><version>${snap.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>xerces</groupId>
@@ -115,7 +115,11 @@
         <dependency><groupId>org.esa.s3tbx</groupId><artifactId>s3tbx-sentinel3-reader</artifactId><version>${s3tbx.version}</version></dependency>
         <dependency><groupId>org.esa.s3tbx</groupId><artifactId>s3tbx-slstr-regrid</artifactId><version>${s3tbx.version}</version></dependency>
         <dependency><groupId>org.esa.s3tbx</groupId><artifactId>s3tbx-spot-vgt-reader</artifactId><version>${s3tbx.version}</version></dependency>
-        <dependency><groupId>org.esa.snap</groupId><artifactId>idepix-s2msi</artifactId><version>8.0.2</version></dependency>
+        <dependency><groupId>org.esa.snap</groupId><artifactId>idepix-s2msi</artifactId><version>${s2tbx.version}</version></dependency>
+        <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-cache</artifactId><version>${s2tbx.version}</version></dependency>
+        <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-s2msi-reader</artifactId><version>${s2tbx.version}</version></dependency>
+        <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-jp2-writer</artifactId><version>${s2tbx.version}</version></dependency>
+        <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-commons</artifactId><version>${s2tbx.version}</version></dependency>
     <!--    <dependency><groupId>org.esa.snap</groupId><artifactId>snap-envi-reader</artifactId><version>${snap.version}</version></dependency>
         <dependency><groupId>org.esa.snap</groupId><artifactId>snap-envisat-reader</artifactId><version>${snap.version}</version></dependency>
         <dependency><groupId>org.esa.snap</groupId><artifactId>snap-getasse30-dem</artifactId><version>${snap.version}</version></dependency>
@@ -153,12 +157,7 @@
         <dependency><groupId>org.esa.s3tbx</groupId><artifactId>s3tbx-spot-vgt-reader</artifactId></dependency>
         <dependency><groupId>org.esa.snap.seadas</groupId><artifactId>seadas-reader</artifactId></dependency>
 
-        <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-cache</artifactId></dependency>
-        <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-s2msi-reader</artifactId></dependency>
-        <dependency><groupId>org.esa.s2tbx</groupId><artifactId>lib-openjpeg</artifactId></dependency>
-        <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-jp2-reader</artifactId></dependency>
-        <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-jp2-writer</artifactId></dependency>
-        <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-commons</artifactId></dependency>
+
         <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-spot-reader</artifactId></dependency>
         <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-spot6-reader</artifactId></dependency>
         <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-rapideye-reader</artifactId></dependency>

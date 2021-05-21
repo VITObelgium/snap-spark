@@ -19,6 +19,7 @@ import org.esa.snap.core.gpf.common.WriteOp;
 import org.esa.snap.core.gpf.graph.*;
 import org.esa.snap.core.util.SystemUtils;
 import org.esa.snap.engine_utilities.gpf.ProcessTimeMonitor;
+import org.esa.snap.lib.openjpeg.activator.OpenJPEGActivator;
 
 import javax.media.jai.JAI;
 import javax.media.jai.TileCache;
@@ -209,6 +210,7 @@ public class ProcessFilesGPT implements Serializable {
     }
 
     private String processFile(String inputFile) throws IOException, GraphException, InterruptedException {
+        new OpenJPEGActivator().start();
         File input = new File(inputFile);
         return this.processFile(singletonList(input), input.getName());
     }

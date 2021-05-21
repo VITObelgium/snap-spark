@@ -1,5 +1,12 @@
 package be.vito.terrascope.snapgpt;
 
+import com.google.gson.Gson;
+import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -7,13 +14,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.io.File;
-
-import com.google.gson.Gson;
-import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
-import org.junit.Assert;
-import org.junit.Test;
 
 import static org.junit.Assert.*;
 
@@ -80,6 +80,13 @@ public class TestProcessFilesGPT {
         return SparkContext.getOrCreate(new SparkConf(true).setAppName(TestProcessFilesGPT.class.getName()).setMaster("local[1,5]"));
     }
 
+    @Ignore
+    @Test
+    public void testIdepix() throws URISyntaxException {
+        String gptXML = getAbsolutePath("idepix.xml");
+        setupSpark();
+        ProcessFilesGPT.main(new String[]{"-gpt", gptXML,"-output-dir","/tmp","/data/MTDA/CGS_S2/CGS_S2_L1C/2020/08/07/S2B_MSIL1C_20200807T084559_N0209_R107_T33MZS_20200807T110241/S2B_MSIL1C_20200807T084559_N0209_R107_T33MZS_20200807T110241.SAFE/MTD_MSIL1C.xml"});
+    }
 
     @Test
     public void testSimpleGraphNoTempFile() throws URISyntaxException {

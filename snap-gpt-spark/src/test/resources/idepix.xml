@@ -1,0 +1,39 @@
+<graph id="SentinelIdepixProc">
+    <version>1.0</version>
+    <node id="SentinelReader">
+        <operator>Read</operator>
+        <parameters>
+            <file>${file}</file>
+            <formatName>${format_name}</formatName>
+        </parameters>
+    </node>
+    <node id="SentinelResample">
+        <operator>Resample</operator>
+        <sources>
+            <sourceProduct refid="SentinelReader"/>
+        </sources>
+        <parameters>
+            <targetResolution>20</targetResolution>
+            <upsampling>Nearest</upsampling>
+            <downsampling>Mean</downsampling>
+            <flagDownsampling>First</flagDownsampling>
+            <resampleOnPyramidLevels>true</resampleOnPyramidLevels>
+        </parameters>
+    </node>
+    <node id="SentinelIdepix">
+        <operator>Idepix.S2</operator>
+        <sources>
+            <sourceProduct refid="SentinelResample"/>
+        </sources>
+        <parameters>
+            <copyToaReflectances>true</copyToaReflectances>
+            <copyFeatureValues>false</copyFeatureValues>
+            <computeMountainShadow>true</computeMountainShadow>
+            <computeCloudShadow>true</computeCloudShadow>
+            <computeCloudBuffer>true</computeCloudBuffer>
+            <computeCloudBufferForCloudAmbiguous>true</computeCloudBufferForCloudAmbiguous>
+            <cloudBufferWidth>2</cloudBufferWidth>
+            <demName>Copernicus 30m Global DEM</demName>
+        </parameters>
+    </node>
+</graph>
