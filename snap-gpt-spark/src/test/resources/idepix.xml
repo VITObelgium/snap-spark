@@ -20,10 +20,25 @@
             <resampleOnPyramidLevels>true</resampleOnPyramidLevels>
         </parameters>
     </node>
+    <node id="Subset">
+        <operator>Subset</operator>
+        <sources>
+            <sourceProduct refid="SentinelResample"/>
+        </sources>
+        <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+            <region>500,500,1000,1000</region>
+            <geoRegion/>
+            <subSamplingX>1</subSamplingX>
+            <subSamplingY>1</subSamplingY>
+            <fullSwath>false</fullSwath>
+            <tiePointGridNames/>
+            <copyMetadata>true</copyMetadata>
+        </parameters>
+    </node>
     <node id="SentinelIdepix">
         <operator>Idepix.S2</operator>
         <sources>
-            <sourceProduct refid="SentinelResample"/>
+            <sourceProduct refid="Subset"/>
         </sources>
         <parameters>
             <copyToaReflectances>true</copyToaReflectances>
@@ -34,6 +49,16 @@
             <computeCloudBufferForCloudAmbiguous>true</computeCloudBufferForCloudAmbiguous>
             <cloudBufferWidth>2</cloudBufferWidth>
             <demName>Copernicus 30m Global DEM</demName>
+        </parameters>
+    </node>
+    <node id="Write">
+        <operator>Write</operator>
+        <sources>
+            <sourceProduct refid="SentinelIdepix"/>
+        </sources>
+        <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+            <file>/tmp/output.tiff</file>
+            <formatName>BEAM-DIMAP</formatName>
         </parameters>
     </node>
 </graph>
