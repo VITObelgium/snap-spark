@@ -14,7 +14,7 @@
       <sourceProduct refid="Read"/>
     </sources>
     <parameters class="com.bc.ceres.binding.dom.XppDomElement">
-      <sourceBands>band_1</sourceBands>
+      <sourceBands>fAPAR</sourceBands>
       <region>500,500,10980,10980</region>
       <geoRegion/>
       <subSamplingX>1</subSamplingX>
