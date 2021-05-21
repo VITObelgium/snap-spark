@@ -41,7 +41,7 @@
             <sourceProduct refid="Subset"/>
         </sources>
         <parameters>
-            <copyToaReflectances>true</copyToaReflectances>
+            <copyToaReflectances>false</copyToaReflectances>
             <copyFeatureValues>false</copyFeatureValues>
             <computeMountainShadow>true</computeMountainShadow>
             <computeCloudShadow>true</computeCloudShadow>
@@ -51,14 +51,31 @@
             <demName>Copernicus 30m Global DEM</demName>
         </parameters>
     </node>
-    <node id="Write">
-        <operator>Write</operator>
+    <node id="SubsetBands">
+        <operator>Subset</operator>
         <sources>
             <sourceProduct refid="SentinelIdepix"/>
         </sources>
         <parameters class="com.bc.ceres.binding.dom.XppDomElement">
+            <sourceBands>pixel_classif_flags</sourceBands>
+            <region/>
+            <geoRegion/>
+            <subSamplingX>1</subSamplingX>
+            <subSamplingY>1</subSamplingY>
+            <fullSwath>false</fullSwath>
+            <tiePointGridNames/>
+            <copyMetadata>true</copyMetadata>
+        </parameters>
+    </node>
+
+    <node id="Write">
+        <operator>Write</operator>
+        <sources>
+            <sourceProduct refid="SubsetBands"/>
+        </sources>
+        <parameters class="com.bc.ceres.binding.dom.XppDomElement">
             <file>/tmp/output.tiff</file>
-            <formatName>BEAM-DIMAP</formatName>
+            <formatName>GDAL-GTiff-WRITER</formatName>
         </parameters>
     </node>
 </graph>

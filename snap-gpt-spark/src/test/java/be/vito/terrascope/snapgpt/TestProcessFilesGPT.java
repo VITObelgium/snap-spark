@@ -87,11 +87,11 @@ public class TestProcessFilesGPT {
         Properties props = System.getProperties();
         props.setProperty("snap.dataio.gdal.creationoptions", "COMPRESS=DEFLATE;TILED=TRUE");
         props.setProperty("snap.jai.defaultTileSize", "256");
-        props.setProperty("snap.jai.tileCacheSize", "2048");
+        props.setProperty("snap.jai.tileCacheSize", "1024");
 
         String gptXML = getAbsolutePath("idepix.xml");
         setupSpark();
-        ProcessFilesGPT.main(new String[]{"-format", "BEAM-DIMAP","-gpt", gptXML,"-output-dir","/tmp","/data/MTDA/CGS_S2/CGS_S2_L1C/2020/08/07/S2B_MSIL1C_20200807T084559_N0209_R107_T33MZS_20200807T110241/S2B_MSIL1C_20200807T084559_N0209_R107_T33MZS_20200807T110241.SAFE/MTD_MSIL1C.xml"});
+        ProcessFilesGPT.main(new String[]{"-format", "GDAL-GTiff-WRITER","-gpt", gptXML,"-output-dir","/tmp","/data/MTDA/CGS_S2/CGS_S2_L1C/2020/08/07/S2B_MSIL1C_20200807T084559_N0209_R107_T33MZS_20200807T110241/S2B_MSIL1C_20200807T084559_N0209_R107_T33MZS_20200807T110241.SAFE/MTD_MSIL1C.xml"});
     }
 
     @Test
