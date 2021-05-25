@@ -72,6 +72,12 @@ void deploy(hdfs_dir="/workflows/snap/",rel_version){
     dir("snap-gpt-spark/auxdata") {
         sh "mkdir -p dem/egm96"
         sh "curl -o dem/egm96/ww15mgh_b.zip http://step.esa.int/auxdata/dem/egm96/ww15mgh_b.zip"
+        sh "mkdir -p watermask"
+        sh "curl -o watermask/50m.zip http://step.esa.int/auxdata/watermask/images/50m.zip"
+        sh "curl -o watermask/150m.zip http://step.esa.int/auxdata/watermask/images/150m.zip"
+        sh "curl -o watermask/GC_water_mask.zip http://step.esa.int/auxdata/watermask/images/GC_water_mask.zip"
+        sh "curl -o watermask/MODIS_north_water_mask.zip http://step.esa.int/auxdata/watermask/images/MODIS_north_water_mask.zip"
+        sh "curl -o watermask/MODIS_south_water_mask.zip http://step.esa.int/auxdata/watermask/images/MODIS_south_water_mask.zip"
         sh "zip -r auxdata.zip *"
         sh "hdfs dfs -copyFromLocal -f auxdata.zip ${hdfs_dir}"
     }
