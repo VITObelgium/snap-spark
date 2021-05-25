@@ -111,7 +111,7 @@
                 <include>org.esa.s2tbx:s2tbx-radiometric-indices</include>
                 <include>org.esa.s2tbx:s2tbx-reflectance-to-radiance</include>
                 <!-- <include>org.esa.s2tbx:lib-gdal</include> -->
-                <!-- <include>org.esa.s2tbx:s2tbx-gdal-reader</include>  -->
+                <include>org.esa.s2tbx:s2tbx-gdal-writer</include>
                 <include>org.esa.s2tbx:s2tbx-grm</include>
                 <include>org.esa.snap:idepix-s2msi</include>
 
