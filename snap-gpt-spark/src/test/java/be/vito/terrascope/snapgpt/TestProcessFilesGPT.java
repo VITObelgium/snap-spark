@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
