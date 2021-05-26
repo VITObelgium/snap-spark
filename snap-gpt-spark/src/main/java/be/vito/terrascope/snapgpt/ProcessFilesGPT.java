@@ -103,21 +103,6 @@ public class ProcessFilesGPT implements Serializable {
         System.out.println("This SNAP workflow file will be applied: " + getXml());
         System.out.println("Output directory: " + outputLocation);
 
-        if (!OpenJpegUtils.validateOpenJpegExecutables(S2Config.OPJ_INFO_EXE, S2Config.OPJ_DECOMPRESSOR_EXE)) {
-            System.out.println("Invalid OpenJpeg executables: " + S2Config.OPJ_INFO_EXE + "  " + S2Config.OPJ_DECOMPRESSOR_EXE);
-            ProcessBuilder builder = new ProcessBuilder(new String[]{S2Config.OPJ_INFO_EXE, "-h"});
-            builder.redirectErrorStream(true);
-            try {
-                CommandOutput commandOutput = OpenJpegUtils.runProcess(builder);
-                System.out.println("commandOutput = " + commandOutput.getErrorOutput());
-                System.out.println("commandOutput text = " + commandOutput.getTextOutput());
-                System.out.println("commandOutput errorcode = " + commandOutput.getErrorCode());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
 
         List<String> resultFiles = new ArrayList<String>();
 
@@ -168,6 +153,24 @@ public class ProcessFilesGPT implements Serializable {
             throw ex;
         }
 
+    }
+
+    private void checkOpenJpeg() {
+        if (!OpenJpegUtils.validateOpenJpegExecutables(S2Config.OPJ_INFO_EXE, S2Config.OPJ_DECOMPRESSOR_EXE)) {
+            System.out.println("Invalid OpenJpeg executables: " + S2Config.OPJ_INFO_EXE + "  " + S2Config.OPJ_DECOMPRESSOR_EXE);
+            ProcessBuilder builder = new ProcessBuilder(new String[]{S2Config.OPJ_INFO_EXE, "-h"});
+            builder.redirectErrorStream(true);
+            try {
+                CommandOutput commandOutput = OpenJpegUtils.runProcess(builder);
+                System.out.println("commandOutput = " + commandOutput.getErrorOutput());
+                System.out.println("commandOutput text = " + commandOutput.getTextOutput());
+                System.out.println("commandOutput errorcode = " + commandOutput.getErrorCode());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     static List<STACProduct> parseSTACInputFile(String inputConfigFile) {
@@ -229,9 +232,8 @@ public class ProcessFilesGPT implements Serializable {
     }
 
     private String processFile(String inputFile) throws IOException, GraphException, InterruptedException {
-        new OpenJPEGActivator().start();
         File input = new File(inputFile);
-        return this.processFile(singletonList(input), input.getName().replace(".xml",".tif"));
+        return this.processFile(singletonList(input), input.getName());
     }
 
     private String processFile(List<File> inputFiles, final String outputName) throws IOException, GraphException, InterruptedException {
@@ -278,6 +280,7 @@ public class ProcessFilesGPT implements Serializable {
             ProcessTimeMonitor timeMonitor = new ProcessTimeMonitor();
             timeMonitor.start();
             SystemUtils.init3rdPartyLibs(ProcessFilesGPT.class);
+            new OpenJPEGActivator().start();
             System.err.println("SNAP Application Data Dir: " + SystemUtils.getApplicationDataDir());
             System.err.println("SNAP Auxiliary Data Dir: " + SystemUtils.getAuxDataPath());
             System.err.println("SNAP Cache Dir: " + SystemUtils.getCacheDir());
@@ -285,6 +288,8 @@ public class ProcessFilesGPT implements Serializable {
             System.err.println("Processing files: " + inputFiles.stream().map(File::getName).collect(joining(", ")));
             System.err.println("Processing workflow: " + getXml());
             System.err.println("Output location: " + outputLocation);
+
+            checkOpenJpeg();
 
             if (postProcessor != null) {
                 SystemUtils.LOG.info("Post processing executable: " + postProcessor);
