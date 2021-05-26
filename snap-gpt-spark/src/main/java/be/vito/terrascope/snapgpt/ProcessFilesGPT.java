@@ -13,6 +13,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.spark.SparkContext;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.esa.s2tbx.dataio.s2.S2Config;
 import org.esa.snap.core.gpf.OperatorSpi;
 import org.esa.snap.core.gpf.common.ReadOp;
 import org.esa.snap.core.gpf.common.WriteOp;
@@ -20,6 +21,8 @@ import org.esa.snap.core.gpf.graph.*;
 import org.esa.snap.core.util.SystemUtils;
 import org.esa.snap.engine_utilities.gpf.ProcessTimeMonitor;
 import org.esa.snap.lib.openjpeg.activator.OpenJPEGActivator;
+import org.esa.snap.lib.openjpeg.utils.CommandOutput;
+import org.esa.snap.lib.openjpeg.utils.OpenJpegUtils;
 
 import javax.media.jai.JAI;
 import javax.media.jai.TileCache;
@@ -99,6 +102,22 @@ public class ProcessFilesGPT implements Serializable {
 
         System.out.println("This SNAP workflow file will be applied: " + getXml());
         System.out.println("Output directory: " + outputLocation);
+
+        if (!OpenJpegUtils.validateOpenJpegExecutables(S2Config.OPJ_INFO_EXE, S2Config.OPJ_DECOMPRESSOR_EXE)) {
+            System.out.println("Invalid OpenJpeg executables: " + S2Config.OPJ_INFO_EXE + "  " + S2Config.OPJ_DECOMPRESSOR_EXE);
+            ProcessBuilder builder = new ProcessBuilder(new String[]{S2Config.OPJ_INFO_EXE, "-h"});
+            builder.redirectErrorStream(true);
+            try {
+                CommandOutput commandOutput = OpenJpegUtils.runProcess(builder);
+                System.out.println("commandOutput = " + commandOutput.getErrorOutput());
+                System.out.println("commandOutput text = " + commandOutput.getTextOutput());
+                System.out.println("commandOutput errorcode = " + commandOutput.getErrorCode());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         List<String> resultFiles = new ArrayList<String>();
 
@@ -212,7 +231,7 @@ public class ProcessFilesGPT implements Serializable {
     private String processFile(String inputFile) throws IOException, GraphException, InterruptedException {
         new OpenJPEGActivator().start();
         File input = new File(inputFile);
-        return this.processFile(singletonList(input), input.getName());
+        return this.processFile(singletonList(input), input.getName().replace(".xml",".tif"));
     }
 
     private String processFile(List<File> inputFiles, final String outputName) throws IOException, GraphException, InterruptedException {
