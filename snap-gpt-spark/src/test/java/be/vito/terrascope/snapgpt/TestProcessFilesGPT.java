@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -19,6 +18,18 @@ import java.util.Properties;
 import static org.junit.Assert.*;
 
 public class TestProcessFilesGPT {
+
+    static{
+        Properties properties = System.getProperties();
+        properties.setProperty("snap.dataio.bigtiff.tiling.height", "256");
+        properties.setProperty("snap.dataio.bigtiff.tiling.width", "256");
+        properties.setProperty("snap.jai.defaultTileSize", "256");
+        properties.setProperty("snap.jai.tileCacheSize", "1024");
+        properties.setProperty("snap.gpf.useFileTileCache", "false");
+        properties.setProperty("snap.parallelism", "2");
+
+
+    }
 
     private String testProduct = "/data/MTDA/CGS_S2/CGS_S2_FAPAR/2018/06/18/S2A_20180618T101021Z_32TPP_CGS_V102_000/S2A_20180618T101021Z_32TPP_FAPAR_V102/10M/S2A_20180618T101021Z_32TPP_FAPAR_10M_V102.tif";
 
