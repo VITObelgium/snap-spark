@@ -48,7 +48,7 @@
             <computeCloudBuffer>true</computeCloudBuffer>
             <computeCloudBufferForCloudAmbiguous>true</computeCloudBufferForCloudAmbiguous>
             <cloudBufferWidth>2</cloudBufferWidth>
-            <demName>Copernicus 30m Global DEM</demName>
+            <demName>GETASSE30</demName>
         </parameters>
     </node>
     <node id="SubsetBands">

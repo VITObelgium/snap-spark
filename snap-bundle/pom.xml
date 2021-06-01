@@ -110,6 +110,15 @@
             </exclusions>
         </dependency>
 
+        <dependency><groupId>org.esa.snap</groupId><artifactId>snap-getasse30-dem</artifactId><version>${snap.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>xerces</groupId>
+                    <artifactId>xercesImpl</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <dependency><groupId>org.esa.snap</groupId><artifactId>snap-bigtiff</artifactId><version>${snap.version}</version></dependency>
         <dependency><groupId>org.esa.s3tbx</groupId><artifactId>s3tbx-rad2refl</artifactId><version>${s3tbx.version}</version></dependency>
         <dependency><groupId>org.esa.s3tbx</groupId><artifactId>s3tbx-sentinel3-reader</artifactId><version>${s3tbx.version}</version></dependency>
@@ -123,7 +132,6 @@
         <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-gdal-writer</artifactId><version>${s2tbx.version}</version></dependency>
     <!--    <dependency><groupId>org.esa.snap</groupId><artifactId>snap-envi-reader</artifactId><version>${snap.version}</version></dependency>
         <dependency><groupId>org.esa.snap</groupId><artifactId>snap-envisat-reader</artifactId><version>${snap.version}</version></dependency>
-        <dependency><groupId>org.esa.snap</groupId><artifactId>snap-getasse30-dem</artifactId><version>${snap.version}</version></dependency>
 
         <dependency><groupId>org.esa.snap</groupId><artifactId>snap-hdf5-writer</artifactId><version>${snap.version}</version></dependency>
         <dependency><groupId>org.esa.snap</groupId><artifactId>snap-jython</artifactId><version>${snap.version}</version></dependency>
