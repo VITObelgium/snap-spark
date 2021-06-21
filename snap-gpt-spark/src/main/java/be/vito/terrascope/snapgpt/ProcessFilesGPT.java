@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
 import java.util.logging.*;
 
@@ -351,9 +352,18 @@ public class ProcessFilesGPT implements Serializable {
                 Path finalOutputPath = Paths.get(outputLocation);
                 Files.walk(tempOutputDir).filter(path -> !path.equals(tempOutputDir)).forEach(path -> {
                     try {
-                        Files.copy(path, finalOutputPath.resolve(tempOutputDir.relativize(path)), StandardCopyOption.REPLACE_EXISTING);
+                        Path targetPath = finalOutputPath.resolve(tempOutputDir.relativize(path));
+                        Files.copy(path, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(targetPath);
+                        permissions.add(PosixFilePermission.OWNER_READ);
+                        permissions.add(PosixFilePermission.OWNER_WRITE);
+                        permissions.add(PosixFilePermission.GROUP_READ);
+                        permissions.add(PosixFilePermission.GROUP_WRITE);
+                        Files.setPosixFilePermissions(targetPath, permissions);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
+                    } catch (UnsupportedOperationException e) {
+                        SystemUtils.LOG.warning("Could not set file permissions for file " + path.toString());
                     }
                 });
             }
