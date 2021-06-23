@@ -87,11 +87,11 @@ void deploy(hdfs_dir="/workflows/snap/",rel_version){
         sh "mkdir -p auxdata/gdal/gdal-3-0-X-jni"
         sh "curl -o auxdata/gdal/libenvironment-variables.so https://raw.githubusercontent.com/senbox-org/s2tbx/8.0.2/lib-gdal/src/main/resources/auxdata/gdal/Linux/x64/libenvironment-variables.so"
         sh "curl -o auxdata/gdal/gdal-3-0-X-jni/gdaljni.zip https://raw.githubusercontent.com/senbox-org/s2tbx/8.0.2/lib-gdal/src/main/resources/auxdata/gdal/Linux/x64/gdal-3-0-X-jni.zip"
-        sh "cd auxdata/gdal/gdal-3-0-X-jni && unzip gdaljni.zip && rm gdaljni.zip"
+        sh "cd auxdata/gdal/gdal-3-0-X-jni && unzip -o gdaljni.zip && rm gdaljni.zip"
 
         sh "mkdir -p auxdata/gdal/gdal-2-3-X-jni"
         sh "curl -o auxdata/gdal/gdal-2-3-X-jni/gdaljni.zip https://raw.githubusercontent.com/senbox-org/s2tbx/8.0.2/lib-gdal/src/main/resources/auxdata/gdal/Linux/x64/gdal-2-3-X-jni.zip"
-        sh "cd auxdata/gdal/gdal-2-3-X-jni && unzip gdaljni.zip && rm gdaljni.zip"
+        sh "cd auxdata/gdal/gdal-2-3-X-jni && unzip -o gdaljni.zip && rm gdaljni.zip"
 
         sh "zip -r auxdata.zip *"
         sh "hdfs dfs -copyFromLocal -f auxdata.zip ${hdfs_dir}"
