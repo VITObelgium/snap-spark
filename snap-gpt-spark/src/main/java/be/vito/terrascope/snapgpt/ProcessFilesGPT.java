@@ -354,16 +354,21 @@ public class ProcessFilesGPT implements Serializable {
                     try {
                         Path targetPath = finalOutputPath.resolve(tempOutputDir.relativize(path));
                         Files.copy(path, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(targetPath);
-                        permissions.add(PosixFilePermission.OWNER_READ);
-                        permissions.add(PosixFilePermission.OWNER_WRITE);
-                        permissions.add(PosixFilePermission.GROUP_READ);
-                        permissions.add(PosixFilePermission.GROUP_WRITE);
-                        Files.setPosixFilePermissions(targetPath, permissions);
-                    } catch (IOException e) {
+                        Process permissionProcess = new ProcessBuilder().command("chmod", "ug+rw", targetPath.toString()).start();
+                        IOThreadHandler outputHandler = new IOThreadHandler(permissionProcess.getInputStream());
+                        outputHandler.start();
+                        permissionProcess.waitFor();
+                        List<String> errors = IOUtils.readLines(permissionProcess.getErrorStream());
+                        for (String error : errors) {
+                            SystemUtils.LOG.severe(error);
+                        }
+                        permissionProcess.destroy();
+                        outputHandler.join();
+                        if (permissionProcess.exitValue() != 0) {
+                            SystemUtils.LOG.warning("Could not set file permissions for file " + path.toString());
+                        }
+                    } catch (IOException | InterruptedException e) {
                         throw new RuntimeException(e);
-                    } catch (UnsupportedOperationException e) {
-                        SystemUtils.LOG.warning("Could not set file permissions for file " + path.toString());
                     }
                 });
             }
