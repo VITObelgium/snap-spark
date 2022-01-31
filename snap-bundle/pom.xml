@@ -124,7 +124,7 @@
         <dependency><groupId>org.esa.s3tbx</groupId><artifactId>s3tbx-sentinel3-reader</artifactId><version>${s3tbx.version}</version></dependency>
         <dependency><groupId>org.esa.s3tbx</groupId><artifactId>s3tbx-slstr-regrid</artifactId><version>${s3tbx.version}</version></dependency>
         <dependency><groupId>org.esa.s3tbx</groupId><artifactId>s3tbx-spot-vgt-reader</artifactId><version>${s3tbx.version}</version></dependency>
-        <dependency><groupId>org.esa.snap</groupId><artifactId>idepix-s2msi</artifactId><version>${s2tbx.version}</version></dependency>
+        <dependency><groupId>org.esa.snap</groupId><artifactId>idepix-s2msi</artifactId><version>${idepix.version}</version></dependency>
         <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-cache</artifactId><version>${s2tbx.version}</version></dependency>
         <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-s2msi-reader</artifactId><version>${s2tbx.version}</version></dependency>
         <dependency><groupId>org.esa.s2tbx</groupId><artifactId>s2tbx-jp2-writer</artifactId><version>${s2tbx.version}</version></dependency>
