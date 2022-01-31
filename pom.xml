@@ -13,10 +13,10 @@
         <module>snap-gpt-spark</module>
     </modules>
     <properties>
-        <s1tbx.version>9.0.0-SNAPSHOT</s1tbx.version>
-        <s2tbx.version>9.0.0-SNAPSHOT</s2tbx.version>
-        <snap.version>9.0.0-SNAPSHOT</snap.version>
-        <s3tbx.version>9.0.0-SNAPSHOT</s3tbx.version>
+        <s1tbx.version>8.0.5</s1tbx.version>
+        <s2tbx.version>8.0.6</s2tbx.version>
+        <snap.version>8.0.3</snap.version>
+        <s3tbx.version>8.0.4</s3tbx.version>
     </properties>
     <distributionManagement>
         <repository>
